@@ -1,0 +1,1580 @@
+%EE569 HOMEWORK ASSIGNMENT 2
+%DATE: Feb 23th 2021
+%NAME: Siyu Li
+%ID:2455870216
+%E-mail:lisiyu@usc.edu
+%%%%%%%%%%%%%
+% I did not post any online source code here even if I did some modification to them like edgeDemo, EdgesEvalImg and getNearestVertex.
+##########################################
+function [P_mean, R_mean, F_mean] = calPRFmean(cntR, sumR, cntP, sumP,thrs)
+P_mean = 0;
+R_mean = 0;
+F_mean = 0;
+len=length(thrs);
+for i =1:len
+    P = cntP(i,1)/(sumP(i,1)+0.001); %avoid being divided by 0
+    R = cntR(i,1)/(sumR(i,1)+0.001);
+    P_mean = P_mean+P;
+    R_mean = R_mean+R;
+    F_mean = F_mean+ ((2*P*R)/(P+R+0.0001));
+end
+
+P_mean = P_mean/len;
+R_mean = R_mean/len;
+F_mean = F_mean/len;
+
+end
+
+function [P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs)
+lenthrsR=length(thrs);
+P=zeros(1,lenthrsR);
+R=zeros(1,lenthrsR);
+F=zeros(1,lenthrsR);
+
+for i =1:lenthrsR
+    
+    P(1,i) = cntP(i,1)/sumP(i,1);
+    R(1,i) = cntR(i,1)/sumR(i,1);
+    F(1,i) = ((2*P(1,i)*R(1,i))/(P(1,i)+R(1,i)));
+    
+end
+
+end
+
+
+function []=canny_proba_map(filepathread,filepathwrite)
+img = imread(filepathread);
+img = rgb2gray(img);
+
+
+low_thresh = [0.1:0.01:0.3];
+high_thresh = [0.4:0.01:0.6];
+
+img_count = 0;
+canny = zeros(size(img));
+for i=low_thresh
+    for j=high_thresh
+        if i < (j - 0.2)
+            canny = canny + edge(img, 'Canny', [i, j]);
+            img_count = img_count + 1;
+        end
+    end
+end
+canny = canny / img_count;
+
+imwrite(canny, filepathwrite);
+
+
+end
+
+function converted_channel=CMYRGBconvert(input_channel)
+[m,n]=size(input_channel);
+converted_channel=zeros(m,n);
+for i=1:m
+    for j=1:n
+        converted_channel(i,j)=255-input_channel(i,j);
+    end
+end
+
+end
+
+function tetrahedron = decideMBVQspace(r,g,b)
+
+if (r+g)>255
+    if (g+b)>255
+        if (r+g+b)>510
+            tetrahedron = 'CMYW';
+        else
+            tetrahedron = 'MYGC';
+        end
+    else
+        tetrahedron = 'RGMY';
+    end
+else
+    if (g+b)<=255
+        if (r+g+b)<=255
+            tetrahedron = 'KRGB';
+        else
+            tetrahedron = 'RGBM';
+        end
+    else
+        tetrahedron = 'CMGB';
+    end
+end
+
+end
+
+function halftoned_img=ditheringOperation(img,threshindex)
+[p,q]=size(threshindex);
+[m,n]=size(img);
+
+halftoned_img=zeros(m,n);
+num_row=ceil(m/p);
+num_col=ceil(n/q);
+imgpad=zeros(num_row*p,num_col*q);
+
+for i=1:m
+    for j=1:n
+        imgpad(i,j)=img(i,j);
+    end
+end
+
+halftoned_result=zeros(num_row*p,num_col*q);
+
+for i=1:num_row
+    for j=1:num_col
+        for k=1:p
+            for l=1:q
+                if imgpad((i-1)*p+k,(j-1)*q+l) <= threshindex(k,l)
+                    halftoned_result((i-1)*p+k,(j-1)*q+l)=0;
+                else
+                    halftoned_result((i-1)*p+k,(j-1)*q+l)=255;
+                end
+            end
+        end
+    end
+end
+
+halftoned_img=halftoned_result(1:m,1:n);
+
+end
+
+function pic_errordiffusion=errorDiffusionMethod(pic,diffmatrix)
+[m,n]=size(pic);
+
+[row,col]=size(diffmatrix);
+pic_padded=zeroPadding(pic,row,col);
+
+rowpadwidth=floor(row/2);
+colpadwidth=floor(col/2);
+
+[y,z]=size(pic_padded);
+pic_thresh_padded=zeros(y,z);
+
+diffmatrix_sym=symmetricalOperation(diffmatrix);
+EDMthresh=floor(255*0.5);
+
+for i=1:m
+    res=mod(i,2);
+    switch res
+        case 1
+            for j=1:n
+                if pic_padded(i+rowpadwidth,j+colpadwidth) <= EDMthresh
+                    pic_thresh_padded(i+rowpadwidth,j+colpadwidth)=0;
+                else
+                    pic_thresh_padded(i+rowpadwidth,j+colpadwidth)=255;
+                end
+                error=pic_padded(i+rowpadwidth,j+colpadwidth)-pic_thresh_padded(i+rowpadwidth,j+colpadwidth);
+                
+                for p=1:row
+                    for q=1:col
+                        pic_padded(i+p-1,j+q-1)=pic_padded(i+p-1,j+q-1)+error*diffmatrix(p,q);
+                    end
+                end
+                
+            end
+            
+        otherwise
+            for j=n:-1:1
+                
+                if pic_padded(i+rowpadwidth,j+colpadwidth) <= EDMthresh
+                    pic_thresh_padded(i+rowpadwidth,j+colpadwidth)=0;
+                else
+                    pic_thresh_padded(i+rowpadwidth,j+colpadwidth)=255;
+                end
+                error=pic_padded(i+rowpadwidth,j+colpadwidth)-pic_thresh_padded(i+rowpadwidth,j+colpadwidth);
+                
+                for p=1:row
+                    for q=1:col
+                        pic_padded(i+p-1,j+q-1)=pic_padded(i+p-1,j+q-1)+error*diffmatrix_sym(p,q);
+                    end
+                end
+                
+            end
+    end
+end
+
+pic_errordiffusion=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        pic_errordiffusion(i,j)=pic_thresh_padded(i+rowpadwidth,j+colpadwidth);
+    end
+end
+
+end
+
+function magnitude=finalGradientMap(x_sobel,y_sobel)
+[m,n]=size(x_sobel);
+magnitude=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        magnitude(i,j)=sqrt(x_sobel(i,j)^2+y_sobel(i,j)^2);
+    end
+end
+
+end
+
+function imgthresh=fixthreshold(img,thresh)
+[m,n]=size(img);
+imgthresh=zeros(m,n);
+for i=1:m
+    for j=1:n
+        if img(i,j)<=thresh
+            imgthresh(i,j)=0;
+        else
+            imgthresh(i,j)=255;
+        end
+    end
+end
+
+end
+
+function normgrad=gradientNorm(origrad)
+[m,n]=size(origrad);
+
+maxseries=-10000*ones(1,m);
+minseries=10000*ones(1,m);
+max=-10000;
+min=10000;
+
+for i=1:m
+    for j=1:n
+        if origrad(i,j) > maxseries(1,i)
+            maxseries(1,i)=origrad(i,j);
+        end
+        
+        if origrad(i,j) < minseries(1,i)
+            minseries(1,i)=origrad(i,j);
+        end
+    end
+    
+    if maxseries(1,i) > max
+        max=maxseries(1,i);
+    end
+    if minseries(1,i) < min
+        min=minseries(1,i);
+    end
+    
+end
+
+normgrad=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        normgrad(i,j)=(255*(origrad(i,j)-min)) / (max-min);
+    end
+end
+
+
+end
+
+function transposed = HW2MatrixTranspose(matrix)
+
+[m,n] = size(matrix);
+transposed = zeros(n,m);
+  for i=1:m
+      for j=1:n
+        transposed(j,i) = matrix(i,j);
+      end
+  end
+
+end
+
+function []=hw2problem1a_ele()
+pic_ele = modreadraw('elephant.raw',321,481,3);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+figure(1);
+imshow(uint8(pic_ele)); % 321*481*3
+R_ele=pic_ele(:,:,1);
+G_ele=pic_ele(:,:,2);
+B_ele=pic_ele(:,:,3);
+pic_ele_gray=RGB2GRAY(R_ele,G_ele,B_ele);
+[x_ele_sobel,y_ele_sobel]=sobel_operation(pic_ele_gray);
+ele_magnitude=finalGradientMap(x_ele_sobel,y_ele_sobel);
+
+ele_sobel_x_norm = gradientNorm(x_ele_sobel);
+ele_sobel_y_norm = gradientNorm(y_ele_sobel);
+ele_magnitude_norm = gradientNorm(ele_magnitude);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% sobel_x ele
+fig_count = 2;
+figure(fig_count);
+imshow(uint8(ele_sobel_x_norm), 'border','tight','initialmagnification','fit');
+title('elephant.raw X Gradient');
+fig_count = fig_count + 1;
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\EleGradientX.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\EleGradientX.raw'];
+% hw2writeraw(ele_sobel_x_norm,name2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% sobel_y ele
+figure(fig_count);
+imshow(uint8(ele_sobel_y_norm), 'border','tight','initialmagnification','fit');
+title('elephant.raw Y Gradient');
+fig_count = fig_count + 1;
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\EleGradientY.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\EleGradientY.raw'];
+% hw2writeraw(ele_sobel_y_norm,name2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% magnitude ele
+figure(fig_count);
+imshow(uint8(ele_magnitude_norm), 'border','tight','initialmagnification','fit');
+title('elephant.raw final gradient magnitude');
+fig_count = fig_count + 1;
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\EleMagnitude.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\EleMagnitude.raw'];
+% hw2writeraw(ele_magnitude_norm,name2);
+imwrite(uint8(ele_magnitude_norm), 'ele_sobel_edge.tif'); %%% This will be used in problem 1(d) !!!!!
+
+thresholds = [0.98, 0.97, 0.96, 0.95, 0.94, 0.93, 0.92, 0.91, 0.9, 0.89,0.88];
+
+for i=thresholds
+    figure(fig_count);
+    ele_sobel_binarized = threshBinarize(ele_magnitude_norm,i);
+    
+    imshow(uint8(ele_sobel_binarized));
+    titlecontent=['elephant.raw final gradient magnitude binarized map threshold= ' num2str(i)];
+    title(titlecontent);
+    fig_count = fig_count + 1;
+%     name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\EleSobelBin' num2str(i) '.jpg'];
+%     saveas(gcf,name1);
+%     
+%     name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\EleSobelBin' num2str(i) '.raw'];
+%     hw2writeraw(ele_sobel_binarized,name2);
+    
+end
+
+end
+
+function []=hw2problem1a_ski()
+pic_ski = modreadraw('ski_person.raw',481,321,3);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+figure(1);
+imshow(uint8(pic_ski)); % 481*321*3
+R_ski=pic_ski(:,:,1);
+G_ski=pic_ski(:,:,2);
+B_ski=pic_ski(:,:,3);
+pic_ski_gray=RGB2GRAY(R_ski,G_ski,B_ski);
+[x_ski_sobel,y_ski_sobel]=sobel_operation(pic_ski_gray);
+ski_magnitude=finalGradientMap(x_ski_sobel,y_ski_sobel);
+
+ski_sobel_x_norm = gradientNorm(x_ski_sobel);
+ski_sobel_y_norm = gradientNorm(y_ski_sobel);
+ski_magnitude_norm = gradientNorm(ski_magnitude);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% sobel_x ski
+fig_count = 2;
+figure(fig_count);
+imshow(uint8(ski_sobel_x_norm), 'border','tight','initialmagnification','fit');
+title('ski_person.raw X gradient');
+fig_count = fig_count + 1;
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\SkiGradientX.jpg'];
+% saveas(gcf,name1);
+
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\SkiGradientX.raw'];
+% hw2writeraw(ski_sobel_x_norm,name2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% sobel_y ski
+figure(fig_count);
+imshow(uint8(ski_sobel_y_norm), 'border','tight','initialmagnification','fit');
+title('ski_person.raw Y gradient');
+fig_count = fig_count + 1;
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\SkiGradientY.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\SkiGradientY.raw'];
+% hw2writeraw(ski_sobel_y_norm,name2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% magnitude ski
+figure(fig_count);
+imshow(uint8(ski_magnitude_norm), 'border','tight','initialmagnification','fit');
+title('ski_person.raw gradient magnitude');
+fig_count = fig_count + 1;
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\SkiMagnitude.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\SkiMagnitude.raw'];
+% hw2writeraw(ski_magnitude_norm,name2);
+imwrite(uint8(ski_magnitude_norm), 'ski_sobel_edge.tif');
+
+thresholds = [0.99, 0.98, 0.97, 0.96, 0.95, 0.94, 0.93, 0.92, 0.91, 0.9];
+
+for i=thresholds
+    figure(fig_count);
+    ski_sobel_binarized = threshBinarize(ski_magnitude_norm,i);
+    
+    imshow(uint8(ski_sobel_binarized));
+    titlecontent=['ski_person.raw final gradient magnitude binarized map threshold= ' num2str(i)];
+    title(titlecontent);
+    fig_count = fig_count + 1;
+%     name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\SkiSobelBin' num2str(i) '.jpg'];
+%     saveas(gcf,name1);
+%     
+%     name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\SkiSobelBin' num2str(i) '.raw'];
+%     hw2writeraw(ski_sobel_binarized,name2);
+    
+end
+
+
+
+end
+
+function []=hw2problem1b_ele()
+pic_ele = modreadraw('elephant.raw',321,481,3);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+figure(1);
+imshow(uint8(pic_ele)); % 321*481*3
+
+R_pic=pic_ele(:,:,1);
+G_pic=pic_ele(:,:,2);
+B_pic=pic_ele(:,:,3);
+
+pic_gray = RGB2GRAY(R_pic,G_pic,B_pic);
+low_thresh = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35];
+high_thresh = [0.2, 0.3, 0.4, 0.5, 0.6];
+fig_count = 1;
+for i=low_thresh
+    for j=high_thresh
+        if i<j
+            pic_canny = edge(pic_gray, 'Canny', [i, j]); %%1:2, 1:3
+            figure(fig_count);
+            
+            imshow(pic_canny); % img are double itself, no need for uint8
+            titlecontent=['elephant.raw canny low_thresh= ' num2str(i) ' high_thresh= ' num2str(j)];
+            title(titlecontent);
+            fig_count = fig_count + 1;
+%             name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\EleCannyLOW' num2str(i) 'High' num2str(j) '.jpg'];
+%             saveas(gcf,name1);
+%             
+%             name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\EleCannyLOW' num2str(i) 'High' num2str(j) '.raw'];
+%             hw2writeraw(pic_canny,name2);
+            
+            
+        end
+    end
+end
+
+
+end
+
+
+function []=hw2problem1b_ski()
+pic_ski = modreadraw('ski_person.raw',481,321,3);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+figure(1);
+imshow(uint8(pic_ski)); % 481*321*3
+
+R_pic=pic_ski(:,:,1);
+G_pic=pic_ski(:,:,2);
+B_pic=pic_ski(:,:,3);
+
+pic_gray = RGB2GRAY(R_pic,G_pic,B_pic);
+low_thresh = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35];
+high_thresh = [0.2, 0.3, 0.4, 0.5, 0.6];
+fig_count = 1;
+for i=low_thresh
+    for j=high_thresh
+        if i<j
+            pic_canny = edge(pic_gray, 'Canny', [i, j]); %%1:2, 1:3
+            figure(fig_count);
+            
+            imshow(pic_canny); % img are double itself, no need for uint8
+            titlecontent=['ski_person.raw canny low_thresh= ' num2str(i) ' high_thresh= ' num2str(j)];
+            title(titlecontent);
+            fig_count = fig_count + 1;
+%             name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\SkiCannyLOW' num2str(i) 'High' num2str(j) '.jpg'];
+%             saveas(gcf,name1);
+%             
+%             name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\SkiCannyLOW' num2str(i) 'High' num2str(j) '.raw'];
+%             hw2writeraw(pic_canny,name2);
+            
+            
+        end
+    end
+end
+
+
+end
+
+function []=hw2problem1c()
+edgesDemo;
+% adjust the detection parameters by hand to get all the images in my
+% report, here I only used the optimal value.
+end
+
+function []=hw2problem1d_canny()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ski_person
+filepathread=['ski_person.jpg'];
+filepathwrite=['ski_canny_edge.tif'];
+canny_proba_map(filepathread,filepathwrite);
+E = imread(filepathwrite);
+E = im2double(E);
+fig_count=1;
+figure(fig_count);
+imshow(E);
+fig_count=fig_count+1;
+EGT=load('ski_person_GT.mat');
+EGT=EGT.groundTruth;
+for i=1:length(EGT)
+    
+    EGTsingleLayer=EGT(i);
+    [thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGTsingleLayer); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+    [P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+    disp(['Precision_canny_skiperson_ground_truth=',num2str(i) '=',num2str(P)]); % Ground truth 1*5 cell
+    disp(['Recall_canny_skiperson_ground_truth=',num2str(i) '=',num2str(R)]);
+    disp(['F_score_canny_skiperson_ground_truth=',num2str(i) '=',num2str(F)]);
+    
+end
+
+[thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGT); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+[P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+disp(['Precision_canny_skiperson_overall ',num2str(P)]); % Ground truth 1*5 cell
+disp(['Recall_canny_skiperson_overall ',num2str(R)]);
+disp(['F_score_canny_skiperson_overall ',num2str(F)]);
+%%%%%%%%%%%%%%%%
+[P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs);
+
+
+figure(fig_count);
+plot(F);
+xlabel('Threshold');
+ylabel('F_score');
+title('F_score under different thresholds skiperson canny');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\F_score_under_different_thresholds_skiperson_canny.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\F_score_under_different_thresholds_skiperson_canny.raw'];
+% hw2writeraw(F,name2);
+
+figure(fig_count);
+plot(P);
+xlabel('Threshold');
+ylabel('Precision');
+title('Precision under different thresholds skiperson canny');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Precision_under_different_thresholds_skiperson_canny.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Precision_under_different_thresholds_skiperson_canny.raw'];
+% hw2writeraw(P,name2);
+
+figure(fig_count);
+plot(R);
+xlabel('Threshold');
+ylabel('Recall');
+title('Recall under different thresholds skiperson canny');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Recall_under_different_thresholds_skiperson_canny.jpg'];
+% saveas(gcf,name);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Recall_under_different_thresholds_skiperson_canny.raw'];
+% hw2writeraw(R,name2);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Precision_canny_skiperson_ground_truth=1=0.59903
+% Recall_canny_skiperson_ground_truth=1=0.63497
+% F_score_canny_skiperson_ground_truth=1=0.60712
+% Precision_canny_skiperson_ground_truth=2=0.56984
+% Recall_canny_skiperson_ground_truth=2=0.55646
+% F_score_canny_skiperson_ground_truth=2=0.55444
+% Precision_canny_skiperson_ground_truth=3=0.75607
+% Recall_canny_skiperson_ground_truth=3=0.55134
+% F_score_canny_skiperson_ground_truth=3=0.62811
+% Precision_canny_skiperson_ground_truth=4=0.54871
+% Recall_canny_skiperson_ground_truth=4=0.62188
+% F_score_canny_skiperson_ground_truth=4=0.57416
+% Precision_canny_skiperson_ground_truth=5=0.60009
+% Recall_canny_skiperson_ground_truth=5=0.64743
+% F_score_canny_skiperson_ground_truth=5=0.61343
+% Precision_canny_skiperson_overall 0.77499
+% Recall_canny_skiperson_overall 0.59704
+% F_score_canny_skiperson_overall 0.66448
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% elephant
+filepathread=['elephant.jpg'];
+filepathwrite=['elephant_canny_edge.tif'];
+canny_proba_map(filepathread,filepathwrite);
+E = imread(filepathwrite);
+
+E = im2double(E);
+fig_count=fig_count+1;
+figure(fig_count);
+imshow(E);
+fig_count=fig_count+1; 
+EGT=load('elephant_GT.mat');
+EGT=EGT.groundTruth;
+for i=1:length(EGT)
+    
+    EGTsingleLayer=EGT(i);
+    [thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGTsingleLayer); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+    [P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+    disp(['Precision_canny_elephant_ground_truth=',num2str(i) '=',num2str(P)]); % Ground truth 1*5 cell
+    disp(['Recall_canny_elephant_ground_truth=',num2str(i) '=',num2str(R)]);
+    disp(['F_score_canny_elephant_ground_truth=',num2str(i) '=',num2str(F)]);
+    
+end
+
+[thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGT); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+[P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+disp(['Precision_canny_elephant_overall ',num2str(P)]); % Ground truth 1*5 cell
+disp(['Recall_canny_elephant_overall ',num2str(R)]);
+disp(['F_score_canny_elephant_overall ',num2str(F)]);
+%%%%%%%%%%%%%%%%
+[P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs);
+
+
+figure(fig_count);
+plot(F);
+xlabel('Threshold');
+ylabel('F_score');
+title('F_score under different thresholds elephant canny');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\F_score_under_different_thresholds_elephant_canny.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\F_score_under_different_thresholds_elephant_canny.raw'];
+% hw2writeraw(F,name2);
+
+figure(fig_count);
+plot(P);
+xlabel('Threshold');
+ylabel('Precision');
+title('Precision under different thresholds elephant canny');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Precision_under_different_thresholds_elephant_canny.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Precision_under_different_thresholds_elephant_canny.raw'];
+% hw2writeraw(P,name2);
+
+figure(fig_count);
+plot(R);
+xlabel('Threshold');
+ylabel('Recall');
+title('Recall under different thresholds elephant canny');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Recall_under_different_thresholds_elephant_canny.jpg'];
+% saveas(gcf,name);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Recall_under_different_thresholds_elephant_canny.raw'];
+% hw2writeraw(R,name2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Precision_canny_elephant_ground_truth=1=0.62397
+% Recall_canny_elephant_ground_truth=1=0.61547
+% F_score_canny_elephant_ground_truth=1=0.60757
+% Precision_canny_elephant_ground_truth=2=0.58198
+% Recall_canny_elephant_ground_truth=2=0.68913
+% F_score_canny_elephant_ground_truth=2=0.61865
+% Precision_canny_elephant_ground_truth=3=0.71337
+% Recall_canny_elephant_ground_truth=3=0.54555
+% F_score_canny_elephant_ground_truth=3=0.60637
+% Precision_canny_elephant_ground_truth=4=0.50249
+% Recall_canny_elephant_ground_truth=4=0.62557
+% F_score_canny_elephant_ground_truth=4=0.54636
+% Precision_canny_elephant_ground_truth=5=0.5762
+% Recall_canny_elephant_ground_truth=5=0.61392
+% F_score_canny_elephant_ground_truth=5=0.58262
+% Precision_canny_elephant_overall 0.82679
+% Recall_canny_elephant_overall 0.61045
+% F_score_canny_elephant_overall 0.69416
+
+
+end
+
+
+function []=hw2problem1d_sobel()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% a
+E = imread('ski_sobel_edge.tif');
+E = im2double(E);
+fig_count=1;
+figure(fig_count);
+imshow(E);
+fig_count=fig_count+1;
+EGT=load('ski_person_GT.mat');
+EGT=EGT.groundTruth;
+for i=1:length(EGT)
+    
+    EGTsingleLayer=EGT(i);
+    [thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGTsingleLayer); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+    [P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+    disp(['Precision_sobel_skiperson_ground_truth=',num2str(i) '=',num2str(P)]); % Ground truth 1*5 cell
+    disp(['Recall_sobel_skiperson_ground_truth=',num2str(i) '=',num2str(R)]);
+    disp(['F_score_sobel_skiperson_ground_truth=',num2str(i) '=',num2str(F)]);
+    
+end
+
+[thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGT); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+[P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+disp(['Precision_sobel_skiperson_overall ',num2str(P)]); % Ground truth 1*5 cell
+disp(['Recall_sobel_skiperson_overall ',num2str(R)]);
+disp(['F_score_sobel_skiperson_overall ',num2str(F)]);
+%%%%%%%%%%%%%%%%
+[P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs);
+
+
+figure(fig_count);
+plot(F);
+xlabel('Threshold');
+ylabel('F_score');
+title('F_score under different thresholds skiperson');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\F_score_under_different_thresholds_skiperson.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\F_score_under_different_thresholds_skiperson.raw'];
+% hw2writeraw(F,name2);
+
+figure(fig_count);
+plot(P);
+xlabel('Threshold');
+ylabel('Precision');
+title('Precision under different thresholds skiperson');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Precision_under_different_thresholds_skiperson.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Precision_under_different_thresholds_skiperson.raw'];
+% hw2writeraw(P,name2);
+
+figure(fig_count);
+plot(R);
+xlabel('Threshold');
+ylabel('Recall');
+title('Recall under different thresholds skiperson');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Recall_under_different_thresholds_skiperson.jpg'];
+% saveas(gcf,name);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Recall_under_different_thresholds_skiperson.raw'];
+% hw2writeraw(R,name2);
+
+%%%%%%%%%%%%%%%%%%% ski_person sobel result
+% Precision_sobel_ground_truth=1=0.56956
+% Recall_sobel_ground_truth=1=0.42884
+% F_score_sobel_ground_truth=1=0.30019
+% Precision_sobel_ground_truth=2=0.55878
+% Recall_sobel_ground_truth=2=0.41627
+% F_score_sobel_ground_truth=2=0.30368
+% Precision_sobel_ground_truth=3=0.71572
+% Recall_sobel_ground_truth=3=0.40047
+% F_score_sobel_ground_truth=3=0.33734
+% Precision_sobel_ground_truth=4=0.53331
+% Recall_sobel_ground_truth=4=0.4253
+% F_score_sobel_ground_truth=4=0.28811
+% Precision_sobel_ground_truth=5=0.5725
+% Recall_sobel_ground_truth=5=0.43465
+% F_score_sobel_ground_truth=5=0.30225
+% Precision_sobel_overall 0.74694
+% Recall_sobel_overall 0.41921
+% F_score_sobel_overall 0.3622
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+E = imread('ele_sobel_edge.tif');
+E = im2double(E);
+fig_count=fig_count+1;
+figure(fig_count);
+imshow(E);
+fig_count=fig_count+1;
+EGT=load('elephant_GT.mat');
+EGT=EGT.groundTruth;
+for i=1:length(EGT)
+    
+    EGTsingleLayer=EGT(i);
+    [thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGTsingleLayer); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+    [P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+    disp(['Precision_sobel_elephant_ground_truth=',num2str(i) '=',num2str(P)]); % Ground truth 1*5 cell
+    disp(['Recall_sobel_elephant_ground_truth=',num2str(i) '=',num2str(R)]);
+    disp(['F_score_sobel_elephant_ground_truth=',num2str(i) '=',num2str(F)]);
+    
+end
+
+[thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGT); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+[P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+disp(['Precision_sobel_elephant_overall ',num2str(P)]); % Ground truth 1*5 cell
+disp(['Recall_sobel_elephant_overall ',num2str(R)]);
+disp(['F_score_sobel_elephant_overall ',num2str(F)]);
+%%%%%%%%%%%%%%%%
+[P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs);
+
+
+figure(fig_count);
+plot(F);
+xlabel('Threshold');
+ylabel('F_score');
+title('F_score under different thresholds elephant');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\F_score_under_different_thresholds_elephant.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\F_score_under_different_thresholds_elephant.raw'];
+% hw2writeraw(F,name2);
+
+figure(fig_count);
+plot(P);
+xlabel('Threshold');
+ylabel('Precision');
+title('Precision under different thresholds elephant');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Precision_under_different_thresholds_elephant.jpg'];
+% saveas(gcf,name);
+fig_count=fig_count+1;
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Precision_under_different_thresholds_elephant.raw'];
+% hw2writeraw(P,name2);
+
+figure(fig_count);
+plot(R);
+xlabel('Threshold');
+ylabel('Recall');
+title('Recall under different thresholds elephant');
+% name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Recall_under_different_thresholds_elephant.jpg'];
+% saveas(gcf,name);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Recall_under_different_thresholds_elephant.raw'];
+% hw2writeraw(R,name2);
+
+%%%%%%%%%%%%%%%% elephant_sobel_result
+% Precision_sobel_elephant_ground_truth=1=0.39335
+% Recall_sobel_elephant_ground_truth=1=0.40375 %num:0.31763012 denomin:0.7971
+% F_score_sobel_elephant_ground_truth=1=NaN %%%0.39848 by hand
+% Precision_sobel_elephant_ground_truth=2=0.42349
+% Recall_sobel_elephant_ground_truth=2=0.42426
+% F_score_sobel_elephant_ground_truth=2=0.27687
+% Precision_sobel_elephant_ground_truth=3=0.55573
+% Recall_sobel_elephant_ground_truth=3=0.4017
+% F_score_sobel_elephant_ground_truth=3=0.32188
+% Precision_sobel_elephant_ground_truth=4=0.54048
+% Recall_sobel_elephant_ground_truth=4=0.43075
+% F_score_sobel_elephant_ground_truth=4=0.28657
+% Precision_sobel_elephant_ground_truth=5=0.59802
+% Recall_sobel_elephant_ground_truth=5=0.42803
+% F_score_sobel_elephant_ground_truth=5=0.30855
+% Precision_sobel_elephant_overall 0.76973
+% Recall_sobel_elephant_overall 0.41566
+% F_score_sobel_elephant_overall 0.38143
+
+
+end
+
+function []=hw2problem1d_structural_edge()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ski_person
+E = imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\ski_person_se_edge.tif');
+E = im2double(E);
+fig_count=1;
+figure(fig_count);
+imshow(E);
+fig_count=fig_count+1;
+EGT=load('ski_person_GT.mat');
+EGT=EGT.groundTruth;
+for i=1:length(EGT)
+    
+    EGTsingleLayer=EGT(i);
+    [thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGTsingleLayer); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+    [P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+    disp(['Precision_structural_edge_skiperson_ground_truth=',num2str(i) '=',num2str(P)]); % Ground truth 1*5 cell
+    disp(['Recall_structural_edge_skiperson_ground_truth=',num2str(i) '=',num2str(R)]);
+    disp(['F_score_structural_edge_skiperson_ground_truth=',num2str(i) '=',num2str(F)]);
+    
+end
+
+[thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGT); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+[P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+disp(['Precision_structural_edge_skiperson_overall ',num2str(P)]); % Ground truth 1*5 cell
+disp(['Recall_structural_edge_skiperson_overall ',num2str(R)]);
+disp(['F_score_structural_edge_skiperson_overall ',num2str(F)]);
+%%%%%%%%%%%%%%%%
+[P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs);
+
+
+figure(fig_count);
+plot(F);
+xlabel('Threshold');
+ylabel('F_score');
+title('F_score under different thresholds skiperson structural edge');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\F_score_under_different_thresholds_skiperson_structural_edge.jpg'];
+saveas(gcf,name);
+fig_count=fig_count+1;
+name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\F_score_under_different_thresholds_skiperson_structural_edge.raw'];
+hw2writeraw(F,name2);
+
+figure(fig_count);
+plot(P);
+xlabel('Threshold');
+ylabel('Precision');
+title('Precision under different thresholds skiperson structural edge');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Precision_under_different_thresholds_skiperson_structural_edge.jpg'];
+saveas(gcf,name);
+fig_count=fig_count+1;
+name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Precision_under_different_thresholds_skiperson_structural_edge.raw'];
+hw2writeraw(P,name2);
+
+figure(fig_count);
+plot(R);
+xlabel('Threshold');
+ylabel('Recall');
+title('Recall under different thresholds skiperson structural edge');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Recall_under_different_thresholds_skiperson_structural_edge.jpg'];
+saveas(gcf,name);
+name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Recall_under_different_thresholds_skiperson_structural_edge.raw'];
+hw2writeraw(R,name2);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% result
+% Precision_structural_edge_skiperson_ground_truth=1=0.61384
+% Recall_structural_edge_skiperson_ground_truth=1=0.41376
+% F_score_structural_edge_skiperson_ground_truth=1=0.38087
+% Precision_structural_edge_skiperson_ground_truth=2=0.58325
+% Recall_structural_edge_skiperson_ground_truth=2=0.36811
+% F_score_structural_edge_skiperson_ground_truth=2=0.34794
+% Precision_structural_edge_skiperson_ground_truth=3=0.65038
+% Recall_structural_edge_skiperson_ground_truth=3=0.3284
+% F_score_structural_edge_skiperson_ground_truth=3=0.34791
+% Precision_structural_edge_skiperson_ground_truth=4=0.57873
+% Recall_structural_edge_skiperson_ground_truth=4=0.4143
+% F_score_structural_edge_skiperson_ground_truth=4=0.3688
+% Precision_structural_edge_skiperson_ground_truth=5=0.61364
+% Recall_structural_edge_skiperson_ground_truth=5=0.4204
+% F_score_structural_edge_skiperson_ground_truth=5=0.38398
+% Precision_structural_edge_skiperson_overall 0.65715
+% Recall_structural_edge_skiperson_overall 0.38322
+% F_score_structural_edge_skiperson_overall 0.39152
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% elephant
+
+E = imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\elephant_se_edge.tif');
+
+E = im2double(E);
+fig_count=fig_count+1;
+figure(fig_count);
+imshow(E);
+fig_count=fig_count+1; 
+EGT=load('elephant_GT.mat');
+EGT=EGT.groundTruth;
+for i=1:length(EGT)
+    
+    EGTsingleLayer=EGT(i);
+    [thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGTsingleLayer); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+    [P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+    disp(['Precision_structural_edge_elephant_ground_truth=',num2str(i) '=',num2str(P)]); % Ground truth 1*5 cell
+    disp(['Recall_structural_edge_elephant_ground_truth=',num2str(i) '=',num2str(R)]);
+    disp(['F_score_structural_edge_elephant_ground_truth=',num2str(i) '=',num2str(F)]);
+    
+end
+
+[thrs,cntR,sumR,cntP,sumP,V] = edgesEvalImg(E,EGT); %cntP cntR sumP sumR 99*1 double V 4-D double visualization of edge matches
+[P,R,F] = calPRFmean(cntR, sumR, cntP, sumP,thrs); %P R F scalar
+disp(['Precision_structural_edge_elephant_overall ',num2str(P)]); % Ground truth 1*5 cell
+disp(['Recall_structural_edge_elephant_overall ',num2str(R)]);
+disp(['F_score_structural_edge_elephant_overall ',num2str(F)]);
+%%%%%%%%%%%%%%%%
+[P,R,F]=CalPRGdiffThresh(cntR, sumR, cntP, sumP,thrs);
+
+
+figure(fig_count);
+plot(F);
+xlabel('Threshold');
+ylabel('F_score');
+title('F_score under different thresholds elephant structural edge');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\F_score_under_different_thresholds_elephant_structural_edge.jpg'];
+saveas(gcf,name);
+fig_count=fig_count+1;
+name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\F_score_under_different_thresholds_elephant_structural_edge.raw'];
+hw2writeraw(F,name2);
+
+figure(fig_count);
+plot(P);
+xlabel('Threshold');
+ylabel('Precision');
+title('Precision under different thresholds elephant structural edge');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Precision_under_different_thresholds_elephant_structural_edge.jpg'];
+saveas(gcf,name);
+fig_count=fig_count+1;
+name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Precision_under_different_thresholds_elephant_structural_edge.raw'];
+hw2writeraw(P,name2);
+
+figure(fig_count);
+plot(R);
+xlabel('Threshold');
+ylabel('Recall');
+title('Recall under different thresholds elephant structural edge');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1\Recall_under_different_thresholds_elephant_structural_edge.jpg'];
+saveas(gcf,name);
+name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem1raw\Recall_under_different_thresholds_elephant_structural_edge.raw'];
+hw2writeraw(R,name2);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% result
+
+% Precision_structural_edge_elephant_ground_truth=1=0.75841
+% Recall_structural_edge_elephant_ground_truth=1=0.25828
+% F_score_structural_edge_elephant_ground_truth=1=0.28039
+% Precision_structural_edge_elephant_ground_truth=2=0.75132
+% Recall_structural_edge_elephant_ground_truth=2=0.30545
+% F_score_structural_edge_elephant_ground_truth=2=0.30917
+% Precision_structural_edge_elephant_ground_truth=3=0.78765
+% Recall_structural_edge_elephant_ground_truth=3=0.22786
+% F_score_structural_edge_elephant_ground_truth=3=0.26512
+% Precision_structural_edge_elephant_ground_truth=4=0.37934
+% Recall_structural_edge_elephant_ground_truth=4=0.27537
+% F_score_structural_edge_elephant_ground_truth=4=0.26078
+% Precision_structural_edge_elephant_ground_truth=5=0.72609
+% Recall_structural_edge_elephant_ground_truth=5=0.26668
+% F_score_structural_edge_elephant_ground_truth=5=0.27957
+% Precision_structural_edge_elephant_overall 0.83485
+% Recall_structural_edge_elephant_overall 0.26245
+% F_score_structural_edge_elephant_overall 0.31292
+
+
+end
+
+function []=hw2problem2a1()
+pic = modreadraw('bridge.raw',501,332,1);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten 
+imshow(uint8(pic)); % 501*332
+figcount=2;
+for i=[32,64,90,110,128,180,210]
+    picthresh=fixthreshold(pic,i);
+    figure(figcount);
+    imshow(uint8(picthresh));
+    titlecontent=sprintf('%s %2.0f','threshold= ',i);
+    title(titlecontent);
+%     name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\fixthreshould=' num2str(i) '.jpg'];
+%     saveas(gcf,name1);
+%     name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\fixthreshould=' num2str(i) '.raw'];
+%     hw2writeraw(picthresh,name2);
+    figcount=figcount+1;
+end
+% pictest = modreadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\fixthreshould=210.raw',501,332,1);%test if new readraw and writeraw work well
+% figure(figcount);
+% imshow(uint8(pictest));
+
+end
+
+function []=hw2problem2a2()
+pic = modreadraw('bridge.raw',501,332,1);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+imshow(uint8(pic)); % 501*332
+
+picrandthresh=randomthreshold(pic);
+figure(2);
+imshow(uint8(picrandthresh));
+titlecontent=['random threshold result'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\randomthreshold.jpg'];
+% saveas(gcf,name1);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\randomthreshold.raw'];
+% hw2writeraw(picrandthresh,name2);
+
+
+end
+
+function []=hw2problem2a3()
+pic = modreadraw('bridge.raw',501,332,1);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+imshow(uint8(pic)); % 501*332
+index_2=[1,2;3,0];
+index_8=indexPadding(index_2,2);
+index_32=indexPadding(index_2,4);
+
+indexthresh_2=indextothresh(index_2);
+indexthresh_8=indextothresh(index_8);
+indexthresh_32=indextothresh(index_32);
+
+imgdither_2=ditheringOperation(pic,indexthresh_2);
+figure(2);
+imshow(uint8(imgdither_2));
+titlecontent=['Dithered Image I=2'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\DitheredImageI=2.jpg'];
+% saveas(gcf,name1);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\DitheredImageI=2.raw'];
+% hw2writeraw(imgdither_2,name2);
+
+imgdither_8=ditheringOperation(pic,indexthresh_8);
+figure(3);
+imshow(uint8(imgdither_8));
+titlecontent=['Dithered Image I=8'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\DitheredImageI=8.jpg'];
+% saveas(gcf,name1);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\DitheredImageI=8.raw'];
+% hw2writeraw(imgdither_8,name2);
+
+imgdither_32=ditheringOperation(pic,indexthresh_32);
+figure(4);
+imshow(uint8(imgdither_32));
+titlecontent=['Dithered Image I=32'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\DitheredImageI=32.jpg'];
+% saveas(gcf,name1);
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\DitheredImageI=32.raw'];
+% hw2writeraw(imgdither_32,name2);
+
+
+
+end
+
+function []=hw2problem2b()
+pic = modreadraw('bridge.raw',501,332,1);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+imshow(uint8(pic)); % 501*332
+
+FS_core = (1/16)*[0 0 0; 0 0 7; 3 5 1];
+JJN_core =(1/48)*[0 0 0 0 0; 0 0 0 0 0; 0 0 0 7 5; 3 5 7 5 3; 1 3 5 3 1];
+SK_core = (1/42)*[0 0 0 0 0; 0 0 0 0 0; 0 0 0 8 4; 2 4 8 4 2; 1 2 4 2 1];
+
+
+pic_FS =  errorDiffusionMethod(pic, FS_core);
+figure(2);
+imshow(pic_FS);
+titlecontent=['Error Diffusion Result FS core'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\ErrorDiffusionResultFS.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\ErrorDiffusionResultFS.raw'];
+% hw2writeraw(pic_FS,name2);
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% pictest = modreadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\ErrorDiffusionResultFS.raw',501,332,1);%test if new readraw and writeraw work well
+% figure(3);
+% imshow(uint8(pictest));
+
+
+pic_JJN =  errorDiffusionMethod(pic, JJN_core);
+figure(3);
+imshow(pic_JJN);
+titlecontent=['Error Diffusion Result JJN core'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\ErrorDiffusionResultJJN.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\ErrorDiffusionResultJJN.raw'];
+% hw2writeraw(pic_JJN,name2);
+
+pic_SK =  errorDiffusionMethod(pic, SK_core);
+figure(4);
+imshow(pic_SK);
+titlecontent=['Error Diffusion Result SK core'];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2\ErrorDiffusionResultSK.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem2raw\ErrorDiffusionResultSK.raw'];
+% hw2writeraw(pic_SK,name2);
+
+
+
+end
+
+
+function []=hw2problem31()
+pic = modreadraw('fish.raw',426,640,3);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+imshow(uint8(pic)); % 426*640*3
+[m,n,dim]=size(pic);
+R_pic=pic(:,:,1);
+G_pic=pic(:,:,2);
+B_pic=pic(:,:,3);
+
+Cyan = CMYRGBconvert(R_pic);
+Megenta = CMYRGBconvert(G_pic);
+Yellow = CMYRGBconvert(B_pic);
+
+FS_core = (1/16)*[0 0 0; 0 0 7; 3 5 1];
+
+pic_Cyan_FS =  errorDiffusionMethod(Cyan, FS_core);
+pic_Megenta_FS = errorDiffusionMethod(Megenta, FS_core);
+pic_Yellow_FS = errorDiffusionMethod(Yellow, FS_core);
+
+imgfinalresult=zeros(m,n,dim);
+pic_red_FS=CMYRGBconvert(pic_Cyan_FS);
+pic_green_FS=CMYRGBconvert(pic_Megenta_FS);
+pic_blue_FS=CMYRGBconvert(pic_Yellow_FS);
+
+imgfinalresult(:,:,1)=pic_red_FS;
+imgfinalresult(:,:,2)=pic_green_FS;
+imgfinalresult(:,:,3)=pic_blue_FS;
+
+figure(2);
+imshow(uint8(imgfinalresult));
+titlecontent=['Color Image Error Diffusion Result FS '];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem3\ColorErrorDiffusionResultFS.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem3raw\ColorErrorDiffusionResultFS.raw'];
+% hw2writeraw(imgfinalresult,name2);
+
+end
+
+function []=hw2problem32()
+pic = modreadraw('fish.raw',426,640,3);   % m*n have different meaning in hw2 from hw1 here, in hw1 m:column n:row and it is reversed in hw2, so readraw and write raw must be rewritten
+imshow(uint8(pic)); % 426*640*3
+
+R_pic=pic(:,:,1);
+G_pic=pic(:,:,2);
+B_pic=pic(:,:,3);
+
+FS_core = (1/16)*[0 0 0; 0 0 7; 3 5 1];
+
+pic_MVBQ=MVBQmethod(R_pic,G_pic,B_pic,FS_core);
+
+figure(2);
+imshow(uint8(pic_MVBQ));
+titlecontent=['MVBQ Result FS '];
+title(titlecontent);
+% name1 = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem3\MVBQ_FS.jpg'];
+% saveas(gcf,name1);
+% 
+% name2  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem3raw\MVBQ_FS.raw'];
+% hw2writeraw(pic_MVBQ,name2);
+
+% figure(3);
+% pictest=modreadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw2\hw2result\problem3raw\MVBQ_FS.raw',426,640,3);
+% imshow(uint8(pictest));
+end
+
+function raw = hw2writeraw(img, filename)
+
+disp([' Write raw image to'  filename ' ...']);
+
+% Get file ID
+fid = fopen(filename,'wb');
+[m,n,dimen]=size(img);
+
+imgsize = m*n;
+% To check if the file exists
+if (fid == -1)
+    error('can not open output image filem press CTRL-C to exit \n');
+    pause
+end
+
+pixels = zeros(1,imgsize*dimen);
+
+for layer=1:dimen
+    temp=layer;
+    for i=1:m % n=501
+        for j=1:n %m=332
+            
+            pixels(temp)=img(i,j,layer); % 500*400*3 to
+            temp=temp+dimen;
+        end
+    end
+end
+
+% Write and close file
+raw = fwrite(fid,pixels, 'uchar');
+fclose(fid);
+
+
+end %function
+
+
+function imgcdf=imgCDF(hist) % hist length 256 only
+imgcdf=zeros(1,256);       % most of image have the gray level of 256 so we neither need to enter the array length nor to measure it
+temp=0;
+for i=1:256
+    temp=temp+hist(1,i);
+    imgcdf(1,i)=temp;
+end
+
+end
+
+function pmf=imgHist(img)          % Calculate histodiagram, pmf here means probability mass function
+pmf=zeros(1,256);
+[m,n]=size(img);
+img=uint8(img);
+imgtemp=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgtemp(i,j)=img(i,j)+1;
+    end
+end
+
+for k=1:256
+    for i=1:m
+        for j=1:n
+            if imgtemp(i,j)==k
+                pmf(1,k)=pmf(1,k)+1;
+            end
+        end
+    end
+end
+
+end
+
+
+function indexoritemp=indexPadding(indexori,k)
+[m,n]=size(indexori);
+indexoritemp=indexori;
+for time=1:k
+    indextemp=zeros(m*(2^time),n*(2^time));
+    range_m=m*(2^(time-1));
+    range_n=n*(2^(time-1));
+    for i=1:range_m
+        for j=1:range_n
+            indextemp(i,j)=1+4*indexoritemp(i,j);
+            indextemp(i+range_m,j)=3+4*indexoritemp(i,j);
+            indextemp(i,j+range_n)=2+4*indexoritemp(i,j);
+            indextemp(i+range_m,j+range_n)=4*indexoritemp(i,j);
+        end
+    end
+    indexoritemp=zeros(m*(2^time),n*(2^time));
+    indexoritemp=indextemp;
+end
+
+end
+
+
+function matrixthresh=indextothresh(matrixindex)
+[m,n]=size(matrixindex);
+matrixthresh=zeros(m,n);
+for i=1:m
+    for j=1:n
+        matrixthresh(i,j)=((matrixindex(i,j)+0.5)/(m*n))*255;
+    end
+end
+
+end
+
+function img=modreadraw(filename,row,col,dimension)
+  
+  disp(['Retrieving Image' filename '...']);
+  
+  fid=fopen(filename,'rb');
+  
+  if (fid==-1)
+      error('can not open input image file press CTRL-C to exit \n');
+   pause
+  end
+  % Get all the pixels from the image
+	pixel = fread(fid, inf, 'uchar');
+
+	% Close file
+	fclose(fid);
+
+  img=zeros(row,col,dimension);
+  
+  for layer=1:dimension
+     temp=layer;
+      for i=1:row
+          for j=1:col
+              
+              img(i,j,layer)=pixel(temp);
+              temp=temp+dimension;
+          end
+      end
+  end
+  
+  
+end
+
+function pic_MVBQ=MVBQmethod(r,g,b,FS_core)
+[m,n]=size(r);
+
+[row,col]=size(FS_core);
+r_padded=zeroPadding(r,row,col);
+g_padded=zeroPadding(g,row,col);
+b_padded=zeroPadding(b,row,col);
+
+rowpadwidth=floor(row/2);
+colpadwidth=floor(col/2);
+
+[y,z]=size(r_padded);
+rpixel_transformed=zeros(y,z);
+gpixel_transformed=zeros(y,z);
+bpixel_transformed=zeros(y,z);
+
+FS_core_sym=symmetricalOperation(FS_core);
+
+for i=1:m
+    res=mod(i,2);
+    switch res
+        case 1
+            for j=1:n
+%                 
+                space = decideMBVQspace(r_padded(i+rowpadwidth,j+colpadwidth),g_padded(i+rowpadwidth,j+colpadwidth),b_padded(i+rowpadwidth,j+colpadwidth));
+                
+                [rpixel_transformed(i+rowpadwidth,j+colpadwidth),gpixel_transformed(i+rowpadwidth,j+colpadwidth),bpixel_transformed(i+rowpadwidth,j+colpadwidth)] = ...
+                    getNearestVertex(space, r_padded(i+rowpadwidth,j+colpadwidth),g_padded(i+rowpadwidth,j+colpadwidth),b_padded(i+rowpadwidth,j+colpadwidth));
+
+                error_r=r_padded(i+rowpadwidth,j+colpadwidth)-rpixel_transformed(i+rowpadwidth,j+colpadwidth);
+                error_g=g_padded(i+rowpadwidth,j+colpadwidth)-gpixel_transformed(i+rowpadwidth,j+colpadwidth);
+                error_b=b_padded(i+rowpadwidth,j+colpadwidth)-bpixel_transformed(i+rowpadwidth,j+colpadwidth);
+                
+                for p=1:row
+                    for q=1:col
+                        r_padded(i+p-1,j+q-1)=r_padded(i+p-1,j+q-1)+error_r*FS_core(p,q);
+                        g_padded(i+p-1,j+q-1)=g_padded(i+p-1,j+q-1)+error_g*FS_core(p,q);
+                        b_padded(i+p-1,j+q-1)=b_padded(i+p-1,j+q-1)+error_b*FS_core(p,q);
+                    end
+                end
+                
+            end
+            
+        otherwise
+            for j=n:-1:1
+                
+                space = decideMBVQspace(r_padded(i+rowpadwidth,j+colpadwidth),g_padded(i+rowpadwidth,j+colpadwidth),b_padded(i+rowpadwidth,j+colpadwidth));
+                
+                [rpixel_transformed(i+rowpadwidth,j+colpadwidth),gpixel_transformed(i+rowpadwidth,j+colpadwidth),bpixel_transformed(i+rowpadwidth,j+colpadwidth)] = ...
+                    getNearestVertex(space, r_padded(i+rowpadwidth,j+colpadwidth),g_padded(i+rowpadwidth,j+colpadwidth),b_padded(i+rowpadwidth,j+colpadwidth));
+               
+                error_r=r_padded(i+rowpadwidth,j+colpadwidth)-rpixel_transformed(i+rowpadwidth,j+colpadwidth);
+                error_g=g_padded(i+rowpadwidth,j+colpadwidth)-gpixel_transformed(i+rowpadwidth,j+colpadwidth);
+                error_b=b_padded(i+rowpadwidth,j+colpadwidth)-bpixel_transformed(i+rowpadwidth,j+colpadwidth);
+                
+                for p=1:row
+                    for q=1:col
+                        r_padded(i+p-1,j+q-1)=r_padded(i+p-1,j+q-1)+error_r*FS_core_sym(p,q);
+                        g_padded(i+p-1,j+q-1)=g_padded(i+p-1,j+q-1)+error_g*FS_core_sym(p,q);
+                        b_padded(i+p-1,j+q-1)=b_padded(i+p-1,j+q-1)+error_b*FS_core_sym(p,q);
+                    end
+                end
+                
+            end
+            
+    end
+end
+
+
+pic_MVBQ=zeros(m,n,3);
+
+for i=1:m
+    for j=1:n
+        pic_MVBQ(i,j,1)=rpixel_transformed(i+rowpadwidth,j+colpadwidth);
+        pic_MVBQ(i,j,2)=gpixel_transformed(i+rowpadwidth,j+colpadwidth);
+        pic_MVBQ(i,j,3)=bpixel_transformed(i+rowpadwidth,j+colpadwidth);
+    end
+end
+
+
+
+end
+
+function imgthresh=randomthreshold(img)
+[m,n]=size(img);
+imgthresh=zeros(m,n);
+for i=1:m
+    for j=1:n
+        thresh=randi(255);
+        if img(i,j)>=thresh
+            imgthresh(i,j)=255;
+        else
+            imgthresh(i,j)=0;
+        end
+    end
+end
+
+end
+
+function gray=RGB2GRAY(r,g,b)
+[m,n]=size(r);
+gray=zeros(m,n);
+for i=1:m
+    for j=1:n
+        gray(i,j)=0.2989*r(i,j)+0.5870 *g(i,j)+0.1140*b(i,j);
+    end
+end
+
+
+end
+
+function [x_sobel,y_sobel]=sobel_operation(grayimg)
+[m,n] = size(grayimg);
+x_sobel = zeros(m,n);
+y_sobel = zeros(m,n);
+mask_x = [-1, 0, 1;
+    -2, 0, 2;
+    -1, 0, 1];
+mask_y_temp=symmetricalOperation(mask_x);
+mask_y=HW2MatrixTranspose(mask_y_temp);
+
+grayimg_padded = universalReflecPadding(grayimg, 1);
+
+
+for i=1:m
+    for j=1:n
+        
+        for p=1:3
+            for q=1:3
+                x_sobel(i,j) = x_sobel(i,j) + grayimg_padded(i+p-1, j+q-1)*mask_x(p,q);
+            end
+        end
+        x_sobel(i,j) = abs(x_sobel(i,j));
+    end
+end
+
+for i=1:m
+    for j=1:n
+        
+        for p=1:3
+            for q=1:3
+                y_sobel(i,j) = y_sobel(i,j) + grayimg_padded(i+p-1, j+q-1)*mask_y(p,q);
+            end
+        end
+        y_sobel(i,j) = abs(y_sobel(i,j));
+        
+    end
+end
+
+
+end
+
+function imgsym=symmetricalOperation(img)
+[m,n]=size(img);
+nhalf=ceil(n/2);
+imgsym=zeros(m,n);
+for j=1:nhalf
+    for i=1:m
+        imgsym(i,j)=img(i,m-j+1);
+        imgsym(i,m-j+1)=img(i,j);   
+    end
+end
+
+end
+
+function binarized=threshBinarize(img,thresh)
+[m,n]=size(img);
+imgpmf=imgHist(img);
+imgcdf=imgCDF(imgpmf);
+lencdf=length(imgcdf);
+value=floor(imgcdf(1,lencdf)*thresh);
+
+for i=1:(lencdf-1)
+    if imgcdf(1,i)<=value && value <= imgcdf(1,i+1)
+        distance1=value-imgcdf(1,i);
+        distance2=imgcdf(1,i+1)-value;
+        if distance1 > distance2
+            threshtrans=i;
+        else
+            threshtrans=i-1;
+        end
+    end
+end
+ 
+binarized=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        if img(i,j) >= threshtrans
+            binarized(i,j)=255;
+        else
+            binarized(i,j)=0;
+        end
+    end
+end
+
+
+end
+
+
+function imgPadded=universalReflecPadding(img,n)  %n is what you want to padd
+
+[row,col]=size(img); 
+imgPadded=zeros(row+2*n,col+2*n);
+imgPadded(n+1:row+n,n+1:col+n)=img;
+
+for i=1:n
+imgPadded(n+1-i,n+1:col+n)=imgPadded(n+1+i,n+1:col+n);        % pad above
+imgPadded(row+n+i,n+1:col+n)=imgPadded(row+n-i,n+1:col+n);    % pad below
+end
+
+for i=1:n
+imgPadded(1:row+2*n,n+1-i)=imgPadded(1:row+2*n,n+1+i);        % pad left
+imgPadded(1:row+2*n,col+n+i)=imgPadded(1:row+2*n,col+n-i);    % pad right bug here!!!!!
+end
+
+end
+
+function img_padded=zeroPadding(img,rowker,colker)
+[m,n]=size(img);
+rowside=floor(rowker/2);
+colside=floor(colker/2);
+img_padded=zeros(m+2*rowside,n+2*colside);
+for i=1:m
+    for j=1:n
+        img_padded(i+rowside,j+colside)=img(i,j);
+    end
+end
+
+end
+

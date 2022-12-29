@@ -1,0 +1,1112 @@
+%EE569 HOMEWORK ASSIGNMENT 4
+%DATE: Mar 25th 2021
+%NAME: Siyu Li
+%ID:2455870216
+%E-mail:lisiyu@usc.edu
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function img_out=SubtractGlobalMean(img)
+[m,n]=size(img);
+img_out=zeros(m,n);
+total_sum=0;
+for i=1:m
+    for j=1:n
+        total_sum=total_sum+img(i,j);
+    end
+end
+mean=total_sum/(m*n);
+for i=1:m
+    for j=1:n
+        img_out(i,j)=img(i,j)-mean;
+    end
+end
+
+end
+function []=hw4problem1b_unsuper()
+test_path = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\dataset_updated\test\'];       
+test_dir  = dir([test_path '*.raw']);
+
+all_feature_map_ave_25 = zeros(25, length(test_dir));
+figcount=1;
+for i = 1:length(test_dir)
+    test_img = hw4readraw([test_path test_dir(i).name],128,128,1);
+    figure(figcount);
+    imshow(uint8(test_img));
+    titlecontent=['test image ' num2str(figcount)];
+    title(titlecontent);
+%     filename=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem1\testimg' num2str(figcount) '.jpg'];
+%     saveas(gcf,filename);
+    figcount=figcount+1;
+    
+    test_img = SubtractGlobalMean(test_img);
+    feature_map_25_layer = CalFeatureMap(test_img);
+    feature_map_ave_25 = FeatureAverage(feature_map_25_layer);
+    
+    all_feature_map_ave_25(:, i) = feature_map_ave_25;
+   
+end
+all_feature_map_ave_3 = PrincipleComponentAnalysis(all_feature_map_ave_25', 3);
+%%%%%% calculate 25D
+label_myself_25 = k_means_myself(all_feature_map_ave_25, 4);
+disp(['25D label calculated by kmeans by myself ' num2str(label_myself_25')]);
+
+label_matlab_25 = kmeans(all_feature_map_ave_25',4);
+disp(['25D label calculated by kmeans of matlab ' num2str(label_matlab_25')]);
+%%%%%% calculate 3D
+label_myself_3 = k_means_myself(all_feature_map_ave_3, 4);
+disp(['3D label calculated by kmeans of myself ' num2str(label_myself_3')]);
+
+label_matlab_3 = kmeans(all_feature_map_ave_3',4);
+disp(['3D label calculated by kmeans of matlab ' num2str(label_matlab_3')]);
+
+
+end
+function img=hw4readraw(filename,row,col,dimension)
+  
+  disp(['Retrieving Image' filename '...']);
+  
+  fid=fopen(filename,'rb');
+  
+  if (fid==-1)
+      error('can not open input image file press CTRL-C to exit \n');
+   pause
+  end
+  % Get all the pixels from the image
+	pixel = fread(fid, inf, 'uchar');
+
+	% Close file
+	fclose(fid);
+
+  img=zeros(row,col,dimension);
+  
+  for layer=1:dimension
+     temp=layer;
+      for i=1:row
+          for j=1:col
+              
+              img(i,j,layer)=pixel(temp);
+              temp=temp+dimension;
+          end
+      end
+  end
+  
+  
+end
+
+function raw = hw4writeraw(img, filename)
+
+disp([' Write raw image to'  filename ' ...']);
+
+% Get file ID
+fid = fopen(filename,'wb');
+[m,n,dimen]=size(img);
+
+imgsize = m*n;
+% To check if the file exists
+if (fid == -1)
+    error('can not open output image filem press CTRL-C to exit \n');
+    pause
+end
+
+pixels = zeros(1,imgsize*dimen);
+
+for layer=1:dimen
+    temp=layer;
+    for i=1:m % n=501
+        for j=1:n %m=332
+            
+            pixels(temp)=img(i,j,layer); % 500*400*3 to
+            temp=temp+dimen;
+        end
+    end
+end
+
+% Write and close file
+raw = fwrite(fid,pixels, 'uchar');
+fclose(fid);
+
+
+end %function
+function filterimg=filterOperation(img,kernel)
+[m,n]=size(img);
+[km,kn]=size(kernel);
+pad_length=floor(km);
+imgpad=hw4ReflecPadding(img,pad_length);
+filterimg=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        
+        for p=1:km
+            for q=1:kn
+                filterimg(i,j)=filterimg(i,j)+imgpad(i+p-1,j+q-1)*kernel(p,q);
+            end
+        end
+        
+    end
+end
+
+end
+function imgPadded=hw4ReflecPadding(img,n)  %n is what you want to padd
+
+[row,col]=size(img); 
+imgPadded=zeros(row+2*n,col+2*n);
+imgPadded(n+1:row+n,n+1:col+n)=img;
+
+for i=1:n
+imgPadded(n+1-i,n+1:col+n)=imgPadded(n+1+i,n+1:col+n);        % pad above
+imgPadded(row+n+i,n+1:col+n)=imgPadded(row+n-i,n+1:col+n);    % pad below
+end
+
+for i=1:n
+imgPadded(1:row+2*n,n+1-i)=imgPadded(1:row+2*n,n+1+i);        % pad left
+imgPadded(1:row+2*n,col+n+i)=imgPadded(1:row+2*n,col+n-i);    % pad right 
+end
+
+end
+function  feature_map_25_layer = CalFeatureMap(img)
+[m,n] = size(img);
+feature_map_25_layer = zeros(m,n,25);
+
+L5 = [ 1, 4, 6, 4, 1];
+E5 = [-1,-2, 0, 2, 1];
+S5 = [-1, 0, 2, 0,-1];
+W5 = [-1, 2, 0,-2, 1];
+R5 = [ 1,-4, 6,-4, 1];
+
+kernel_LESWR=cell(1,5);
+
+kernel_LESWR{1,1}=L5;
+kernel_LESWR{1,2}=E5;
+kernel_LESWR{1,3}=S5;
+kernel_LESWR{1,4}=W5;
+kernel_LESWR{1,5}=R5;
+
+kernel_2dfilter=cell(5);
+
+for i=1:5
+    for j=1:5
+        kernel_2dfilter{i,j}=kernel_LESWR{1,i}'*kernel_LESWR{1,j};
+    end
+end
+
+for i=1:5
+    for j=1:5
+        feature_map_25_layer(:,:,i+j)=filterOperation(img,kernel_2dfilter{i,j});
+    end
+end
+
+end
+function fea_map_average = FeatureAverage(feature_map_ori)
+[m, n, d] = size(feature_map_ori);
+
+fea_map_average = zeros(1,d);
+
+for layer=1:d
+    one_layer_sum = 0;
+    for i=1:m
+        for j=1:n
+            one_layer_sum = one_layer_sum + feature_map_ori(i,j,layer)*feature_map_ori(i,j,layer);
+        end
+    end
+    one_layer_average = one_layer_sum / (m * n);
+    fea_map_average(1,layer) = one_layer_average;
+end
+
+end
+function [max_argument,min_argument]=calDiscriminantPower(all_feature_map_ave_25)
+[m,n]=size(all_feature_map_ave_25);
+%%%%%% Calculate Intra
+mean_4img_class=zeros(m,4);
+offset=0;
+for class=1:4
+    
+    for i=1:m
+        mean=0;
+        for j=9*offset+1:9*(offset+1)
+            mean=mean+all_feature_map_ave_25(i,j);
+        end
+        mean_4img_class(i,offset+1)=mean/9;
+    end
+    offset=offset+1;
+   
+end
+
+intra=zeros(m,4);
+offset=0;
+for class=1:4
+    
+    for i=1:m
+        deviation=0;
+        for j=(9*offset+1):(9*(offset+1))
+            deviation=deviation+(all_feature_map_ave_25(i,j)-mean_4img_class(i,offset+1))^2;
+        end
+        intra(i,offset+1)=deviation;
+    end
+    offset=offset+1;
+end
+
+intra_total=zeros(m,1);
+for i=1:m
+    for j=1:4
+        intra_total(i,1)=intra_total(i,1)+intra(i,j);
+    end
+end
+%%%%%% Calculate Inter
+%%%% cal meantotal
+mean_total=zeros(m,1);
+for i=1:m
+    mean=0;
+    for j=1:n
+        mean=mean+all_feature_map_ave_25(i,j);
+    end
+    mean_total(i,1)=mean/36;
+end
+   
+inter_total=zeros(m,1);
+for i=1:m
+    for j=1:4
+        inter_total(i,1)=inter_total(i,1)+9*((mean_4img_class(i,j)-mean_total(i,1))^2);
+    end
+end
+      
+feature_ratio=inter_total./intra_total;
+[~, max_argument] = max(feature_ratio);
+[~, min_argument] = min(feature_ratio);
+
+end
+function []=hw4problem1a()
+train_path = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\dataset_updated\train\'];       
+train_dir  = dir([train_path '*.raw']);
+
+all_feature_map_ave_25 = zeros(25, length(train_dir));
+
+for i = 1:length(train_dir)
+    train_img = hw4readraw([train_path train_dir(i).name],128,128,1);
+   
+    train_img = SubtractGlobalMean(train_img);
+    feature_map_25_layer = CalFeatureMap(train_img);
+    feature_map_ave_25 = FeatureAverage(feature_map_25_layer);
+    
+    all_feature_map_ave_25(:, i) = feature_map_ave_25;
+   
+end
+
+[max_argument,min_argument]=calDiscriminantPower(all_feature_map_ave_25);
+
+disp(['maximum discriminant power feature number= ' num2str(max_argument)]); % L5E5 and E5L5
+
+disp(['minimum discriminant power feature number= ' num2str(min_argument)]); % L5W5 and W5L5
+
+all_feature_map_ave_3 = PrincipleComponentAnalysis(all_feature_map_ave_25', 3);
+label_position = [ones(1,9), 2 * ones(1,9), 3 * ones(1,9), 4 * ones(1, 9)];
+
+scatter3(all_feature_map_ave_3(1, label_position == 1), all_feature_map_ave_3(2, label_position == 1), all_feature_map_ave_3(3, label_position == 1), 'r');
+hold on
+scatter3(all_feature_map_ave_3(1, label_position == 2), all_feature_map_ave_3(2, label_position == 2), all_feature_map_ave_3(3, label_position == 2), 'g');
+scatter3(all_feature_map_ave_3(1, label_position == 3), all_feature_map_ave_3(2, label_position == 3), all_feature_map_ave_3(3, label_position == 3), 'b');
+scatter3(all_feature_map_ave_3(1, label_position == 4), all_feature_map_ave_3(2, label_position == 4), all_feature_map_ave_3(3, label_position == 4), 'k');
+legend('blanket', 'brick', 'grass', 'rice');
+
+
+end
+function []=hw4problem1b_super()
+%%%%%% Training Set
+train_path = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\dataset_updated\train\'];       
+train_dir  = dir([train_path '*.raw']);
+
+all_feature_map_ave_25_train = zeros(25, length(train_dir));
+
+for i = 1:length(train_dir)
+    train_img = hw4readraw([train_path train_dir(i).name],128,128,1);
+   
+    train_img = SubtractGlobalMean(train_img);
+    feature_map_25_layer = CalFeatureMap(train_img);
+    feature_map_ave_25 = FeatureAverage(feature_map_25_layer);
+    
+    all_feature_map_ave_25_train(:, i) = feature_map_ave_25;
+   
+end
+all_feature_map_ave_3_train = PrincipleComponentAnalysis(all_feature_map_ave_25_train', 3);
+%%%%%% Test Set
+test_path = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\dataset_updated\test\'];       
+test_dir  = dir([test_path '*.raw']);
+
+all_feature_map_ave_25_test = zeros(25, length(test_dir));
+
+for i = 1:length(test_dir)
+    test_img = hw4readraw([test_path test_dir(i).name],128,128,1);
+    
+    test_img = SubtractGlobalMean(test_img);
+    feature_map_25_layer = CalFeatureMap(test_img);
+    feature_map_ave_25 = FeatureAverage(feature_map_25_layer);
+    
+    all_feature_map_ave_25_test(:, i) = feature_map_ave_25;
+   
+end
+all_feature_map_ave_3_test = PrincipleComponentAnalysis(all_feature_map_ave_25_test', 3);
+%%%%%%%%% Implement SVM and RF
+%%% SVM
+lable_training_set = [ones(1,9), 2 * ones(1,9), 3 * ones(1,9), 4 * ones(1,9)]';
+
+template = templateSVM('Standardize',true,'KernelFunction','gaussian', 'SaveSupportVectors', true); % gaussian and linear
+SVM = fitcecoc(all_feature_map_ave_3_train', lable_training_set,'Learners',template);
+label_predicted_SVM = predict(SVM, all_feature_map_ave_3_test');
+disp(['label predicted by SVM ' num2str(label_predicted_SVM')]);
+%%% Random Forest
+RandomFrost = TreeBagger(3, all_feature_map_ave_3_train', lable_training_set);
+label_predicted_RF = predict(RandomFrost, all_feature_map_ave_3_test');
+label_predicted_RandomForst=zeros(12,1);
+for i=1:12
+    label_predicted_RandomForst(i,1)=str2double(label_predicted_RF{i,1});
+end
+disp(['label predicted by Random Forest ' num2str(label_predicted_RandomForst')]);
+
+end
+function label_vector=k_means_myself(ave_fea_map,k)
+[m,n] = size(ave_fea_map);
+rand_index = randperm(n);
+cluster_centroid = ave_fea_map(:, rand_index(end-k+1: end));
+
+label_vector = zeros(n, 1);
+max_iteration = 100;
+for iteration=1: max_iteration
+    for i=1:n
+        min_distance = Inf;
+        for j=1:k
+            current_distance = norm(ave_fea_map(:, i) - cluster_centroid(:, j));
+            if current_distance < min_distance               
+                label_vector(i, 1) = j;
+                min_distance = current_distance;
+            end
+        end
+    end
+    
+    new_center = zeros(m,k);
+    new_center_denominator = zeros(1,k);
+    
+    for i=1:n
+        new_center_denominator(1, label_vector(i,1)) = new_center_denominator(1, label_vector(i,1)) + 1;
+    end
+    for i=1:n
+        new_center(:, label_vector(i,1)) = new_center(:, label_vector(i,1)) + ave_fea_map(:, i)/new_center_denominator(1, label_vector(i,1));
+    end
+    
+    cluster_centroid = new_center;
+end
+
+end
+function []=hw4problem1a_nearest_neighbor()
+%%%%%% Training Set
+train_path = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\dataset_updated\train\'];       
+train_dir  = dir([train_path '*.raw']);
+
+all_feature_map_ave_25_train = zeros(25, length(train_dir));
+
+for i = 1:length(train_dir)
+    train_img = hw4readraw([train_path train_dir(i).name],128,128,1);
+   
+    train_img = SubtractGlobalMean(train_img);
+    feature_map_25_layer = CalFeatureMap(train_img);
+    feature_map_ave_25 = FeatureAverage(feature_map_25_layer);
+    
+    all_feature_map_ave_25_train(:, i) = feature_map_ave_25;
+   
+end
+all_feature_map_ave_3_train = PrincipleComponentAnalysis(all_feature_map_ave_25_train', 3);
+%%%%%% Test Set
+test_path = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\dataset_updated\test\'];       
+test_dir  = dir([test_path '*.raw']);
+
+all_feature_map_ave_25_test = zeros(25, length(test_dir));
+
+for i = 1:length(test_dir)
+    test_img = hw4readraw([test_path test_dir(i).name],128,128,1);
+    
+    test_img = SubtractGlobalMean(test_img);
+    feature_map_25_layer = CalFeatureMap(test_img);
+    feature_map_ave_25 = FeatureAverage(feature_map_25_layer);
+    
+    all_feature_map_ave_25_test(:, i) = feature_map_ave_25;
+   
+end
+all_feature_map_ave_3_test = PrincipleComponentAnalysis(all_feature_map_ave_25_test', 3);
+%%%%%% Implement Nearest Neighbor
+label_training_set=[ones(1,9), 2*ones(1,9), 3*ones(1,9), 4*ones(1,9)];
+label_nearest_neighbor=nearest_neighbor_clf(all_feature_map_ave_3_train,all_feature_map_ave_3_test,label_training_set);
+
+disp(['label by nearest neighbor ' num2str(label_nearest_neighbor)]);
+
+
+end
+function label_out=nearest_neighbor_clf(all_feature_map_ave_3_train,all_feature_map_ave_3_test,label_training_set)
+[mtrain,ntrain]=size(all_feature_map_ave_3_train);
+[~,ntest]=size(all_feature_map_ave_3_test);
+
+traintest=zeros(mtrain,ntrain+ntest);
+traintest(:,1:ntrain)=all_feature_map_ave_3_train;
+traintest(:,ntrain+1:end)=all_feature_map_ave_3_test;
+
+covar=traintest*(traintest');
+invcovar=inv(covar);
+label_out=zeros(1,ntest);
+for i=1:ntest
+    min_distance=Inf;
+    xtest=all_feature_map_ave_3_test(:,i)-mean(all_feature_map_ave_3_test(:,i));
+    
+    for j=1:ntrain
+        
+        xtrain=all_feature_map_ave_3_train(:,j)-mean(all_feature_map_ave_3_train(:,j));
+        xtrain_minus_xtest=abs(xtrain-xtest);        
+        
+        mahala_distance=sqrt((xtrain_minus_xtest')*invcovar*xtrain_minus_xtest);
+        if mahala_distance < min_distance
+            label_out(1,i)=label_training_set(1,j);
+            min_distance=mahala_distance;
+        end
+        
+    end
+    
+end
+
+end
+function energy_map_25_divided_mn=matrix_interlayer_divide(energy_map_25_layer_mn,energy_map_1st_layer_mn)
+[m,n,d] = size(energy_map_25_layer_mn);
+energy_map_25_divided_mn = zeros(m,n,d);
+for layer=1:d
+    for i=1:m
+        for j=1:n
+            energy_map_25_divided_mn(i,j,layer)=energy_map_25_layer_mn(i,j,layer) / (energy_map_1st_layer_mn(i,j)+0.0001);
+        end
+    end
+end
+
+end
+function energy_map_24_reshaped=matrixToRowReshape(energy_map_24_mn)
+[m,n,d]=size(energy_map_24_mn);
+energy_map_24_reshaped=zeros(d,m*n);
+for layer=1:d
+    count=1;
+    for i=1:m
+        for j=1:n
+            energy_map_24_reshaped(layer,count)=energy_map_24_mn(i,j,layer);
+            count=count+1;
+        end
+    end
+    
+end
+
+end
+function labelmap_24=rowToMatrixReshape(label_24,m,n)
+[d,~]=size(label_24);
+labelmap_24=zeros(m,n,d);
+for layer=1:d
+    count=1;
+    for i=1:m
+        for j=1:n
+            labelmap_24(i,j,d)=label_24(d,count);
+            count=count+1;
+        end
+    end
+end
+
+end
+function energy_map_25_layer_mn=filterFeaMap_Gaussian(fea_map_25_layer,radius,sigma)
+
+[m, n, d] = size(fea_map_25_layer);
+energy_map_25_layer_mn = zeros(m,n,d);
+%%%%%% Build Gaussian Filter Mask
+gaussian_mask=zeros(2*radius+1,2*radius+1);
+for p=1:2*radius+1
+    for q=1:2*radius+1
+        gaussian_mask(p,q)=(1/sqrt(2*pi*sigma^2))*exp(-((p-radius-1)^2+(q-radius-1)^2)/(2*sigma^2));
+    end
+end
+%%%%%% Perform Filtering
+for layer=1:d
+    
+    padded_current_layer = hw4ReflecPadding(fea_map_25_layer(:, :, layer),radius);
+    for i=1:m
+        for j=1:n
+            filtered_value = 0;
+                        
+            for p = 1: 2*radius+1
+                for q = 1: 2*radius+1
+                    filtered_value = filtered_value + gaussian_mask(p,q)*padded_current_layer(i+p-1, j+q-1);
+                end
+            end
+            
+            energy_map_25_layer_mn(i, j , layer) = abs(filtered_value)/((2*radius+1)^2);
+        end
+    end
+end
+
+
+end
+function []=hw4problem2a()
+img=imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\composite_updated.png');
+figcount=1;
+figure(figcount);
+imshow(uint8(img));
+figcount=figcount+1;
+[m,n]=size(img);
+
+img = SubtractGlobalMean(img); %%%%% Yo can remove this step if you want
+fea_map_25_layer = CalFeatureMap(img);
+%%%%% Result of Average Filter with Different Radius
+radius_vector=[3,6,11,17,25,40];
+for radius=radius_vector
+    energy_map_25_layer_mn=filterFeaMap_average(fea_map_25_layer,radius);
+    energy_map_25_divided_mn=matrix_interlayer_divide(energy_map_25_layer_mn,energy_map_25_layer_mn(:,:,1));
+    %%% 25 features to 24 features
+    energy_map_24_mn = energy_map_25_divided_mn(:,:,2:end);
+    energy_map_24_reshaped=matrixToRowReshape(energy_map_24_mn); % reshape matrix to row
+    %%% K means
+    label_24 = kmeans(energy_map_24_reshaped', 5, 'MaxIter', 2000);
+    labelmap_24=rowToMatrixReshape(label_24',m,n);
+    
+    labelimg_24 = labelmapToImg(labelmap_24, 5);
+    figure(figcount);
+    imshow(uint8(labelimg_24));
+    titlecontent=['average filter radius = ' num2str(radius)];
+    title(titlecontent);
+%     filename=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem2\p2a_avefilter_radius=' num2str(radius) '.jpg'];
+%     saveas(gcf,filename);
+    figcount=figcount+1;
+end
+%%%%% Result of Gaussian Fliter with Sigma=10 with Different Radius
+sigma=10;
+for radius=radius_vector
+    energy_map_25_layer_mn=filterFeaMap_Gaussian(fea_map_25_layer,radius,sigma);
+    energy_map_25_divided_mn=matrix_interlayer_divide(energy_map_25_layer_mn,energy_map_25_layer_mn(:,:,1));
+     %%% 25 features to 24 features
+    energy_map_24_mn = energy_map_25_divided_mn(:,:,2:end);
+    energy_map_24_reshaped=matrixToRowReshape(energy_map_24_mn); % reshape matrix to row
+     %%% K means
+    label_24 = kmeans(energy_map_24_reshaped', 5, 'MaxIter', 2000);
+    labelmap_24=rowToMatrixReshape(label_24',m,n);
+    
+    labelimg_24 = labelmapToImg(labelmap_24, 5);
+    figure(figcount);
+    imshow(uint8(labelimg_24));
+    titlecontent=['gaussian filter radius = ' num2str(radius)];
+    title(titlecontent);
+%     filename=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem2\p2a_GaussianFilter_radius=' num2str(radius) '.jpg'];
+%     saveas(gcf,filename);
+    figcount=figcount+1;
+end
+
+
+end
+function energy_map_25layer_mn = filterFeaMap_average(feature_map, radius)
+
+[m, n, d] = size(feature_map);
+energy_map_25layer_mn = zeros(m,n,d);
+
+for layer=1:d
+    
+    padded_current_layer = hw4ReflecPadding(feature_map(:, :, layer),radius);
+    for i=1:m
+        for j=1:n
+            filtered_value = 0;
+                        
+            for p = 1: 2*radius+1
+                for q = 1: 2*radius+1
+                    filtered_value = filtered_value + padded_current_layer(i+p-1, j+q-1);%^2;
+                end
+            end
+            
+            energy_map_25layer_mn(i, j , layer) = abs(filtered_value)/((2*radius+1)^2);
+        end
+    end
+end
+
+end
+function  reducedFeature = PrincipleComponentAnalysis(X, dimension)
+
+XsubtrMean = (X - mean(X))./(std(X)+0.0001);
+covar = XsubtrMean'*XsubtrMean;
+
+[V,~] = eig(covar);
+[~,n]=size(V);
+V = V(:, n-dimension+1: n);
+V = V(:, dimension:-1:1);
+reducedFeature = XsubtrMean*V;
+reducedFeature = reducedFeature';
+
+end
+function logicvalue=hw4LoopStopCriteria(img1,img2)
+[m,n]=size(img1);
+imgdiff=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgdiff(i,j)=abs(img1(i,j)-img2(i,j));
+    end
+end
+
+logicvalue=0;
+
+for i=1:m
+    for j=1:n
+        logicvalue=logicvalue+imgdiff(i,j);
+    end
+end
+
+
+
+end
+function []=hw4problem3c()
+
+Dog_1 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_1.png'));
+Dog_2 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_2.png'));
+Dog_3 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_3.png'));
+Cat = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Cat.png'));
+
+Dog_1_gray = single(rgb2gray(Dog_1));
+Dog_2_gray = single(rgb2gray(Dog_2));
+Dog_3_gray = single(rgb2gray(Dog_3));
+Cat_gray = single(rgb2gray(Cat));
+
+[feature1,descriptor1] = vl_sift(Dog_1_gray, 'PeakThresh', 0.015, 'Levels', 4, 'Octaves', 5, 'Magnif', 2) ;
+[feature2,descriptor2] = vl_sift(Dog_2_gray, 'PeakThresh', 0.03, 'EdgeThresh',5) ;
+[feature3,descriptor3] = vl_sift(Dog_3_gray, 'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2) ;
+[feature4,descriptor4] = vl_sift(Cat_gray, 'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2) ;
+
+descriptor1 = PrincipleComponentAnalysis(double(descriptor1'), 20); % descriptor 128*252
+descriptor2 = PrincipleComponentAnalysis(double(descriptor2'), 20);
+descriptor3 = PrincipleComponentAnalysis(double(descriptor3'), 20);
+descriptor4 = PrincipleComponentAnalysis(double(descriptor4'), 20);
+
+
+rmpath('D:\MATLAB2020a\vlfeat-0.9.21\toolbox\noprefix');
+[~, center, sumd, d] = kmeans(double([descriptor1, descriptor2, descriptor3, descriptor4]'),8);
+
+%%%%%%%%%%%%% Calculated Ordered Center Matrix
+[mcenter,ncenter]=size(center);
+distance_ori=zeros(1,mcenter);
+for i=1:mcenter
+    for j=1:ncenter
+        distance_ori(1,i)=distance_ori(1,i)+center(i,j)^2;
+    end
+end
+
+[index,~]=bubblesortValueIndex(distance_ori);
+
+center_ordered=zeros(mcenter,ncenter);
+for i=1:mcenter
+    for j=1:ncenter
+        center_ordered(index(i),j)=center(i,j);
+    end
+end
+
+center_ordered=center_ordered';
+[mcentero,ncentero]=size(center_ordered); % mcentero 20 ncentero 8
+
+%%%%%%%%%%%% Plot Histogram of Feature of Dog 3
+[~, nfeature3] = size(feature3);
+
+feature_class_3 = zeros(1, nfeature3);
+for i=1:nfeature3
+    dis_des_centero=zeros(1,ncentero);
+    for j=1:ncentero
+        for k=1:mcentero
+            dis_des_centero(1,j)=dis_des_centero(1,j)+(center_ordered(k,j)-descriptor3(k,i))^2;
+        end
+    end
+    [value, class] = min(dis_des_centero);
+    feature_class_3(i) = class;
+end
+
+hist_dog_3 = zeros(1, 8);
+for i = 1:nfeature3
+    hist_dog_3(feature_class_3(i)) = hist_dog_3(feature_class_3(i)) + 1;
+end
+
+figcount=1;
+figure(figcount);
+bar(hist_dog_3);
+ylim([0 (max(hist_dog_3)+5)])
+title('Histogram of Dog_3 Features');
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\hist_dog3.jpg'];
+% saveas(gcf,filepath);
+figcount=figcount+1;
+
+%%%%%%%%%%%% Plot Histogram of Feature of Dog 1
+[~, nfeature1] = size(feature1);
+
+feature_class_1 = zeros(1, nfeature1);
+for i=1:nfeature1
+    dis_des_centero=zeros(1,ncentero);
+    for j=1:ncentero
+        for k=1:mcentero
+            dis_des_centero(1,j)=dis_des_centero(1,j)+(center_ordered(k,j)-descriptor1(k,i))^2;
+        end
+    end
+    [value, class] = min(dis_des_centero);
+    feature_class_1(i) = class;
+end
+
+hist_dog_1 = zeros(1, 8);
+for i = 1:nfeature1
+    hist_dog_1(feature_class_1(i)) = hist_dog_1(feature_class_1(i)) + 1;
+end
+
+figure(figcount);
+bar(hist_dog_1);
+ylim([0 (max(hist_dog_1)+5)])
+title('Histogram of Dog_1 Features');
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\hist_dog1.jpg'];
+% saveas(gcf,filepath);
+figcount=figcount+1;
+
+%%%%%%%%%%%% Plot Histogram of Feature of Dog 2
+[~, nfeature2] = size(feature2);
+
+feature_class_2 = zeros(1, nfeature2);
+for i=1:nfeature2
+    dis_des_centero=zeros(1,ncentero);
+    for j=1:ncentero
+        for k=1:mcentero
+            dis_des_centero(1,j)=dis_des_centero(1,j)+(center_ordered(k,j)-descriptor2(k,i))^2;
+        end
+    end
+    [value, class] = min(dis_des_centero);
+    feature_class_2(i) = class;
+end
+
+hist_dog_2 = zeros(1, 8);
+for i = 1:nfeature2
+    hist_dog_2(feature_class_2(i)) = hist_dog_2(feature_class_2(i)) + 1;
+end
+
+figure(figcount);
+bar(hist_dog_2);
+ylim([0 (max(hist_dog_2)+5)])
+title('Histogram of Dog_2 Features');
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\hist_dog2.jpg'];
+% saveas(gcf,filepath);
+figcount=figcount+1;
+
+%%%%%%%%%%%% Plot Histogram of Feature of Cat
+[~, nfeature4] = size(feature4);
+
+feature_class_4 = zeros(1, nfeature4);
+for i=1:nfeature4
+    dis_des_centero=zeros(1,ncentero);
+    for j=1:ncentero
+        for k=1:mcentero
+            dis_des_centero(1,j)=dis_des_centero(1,j)+(center_ordered(k,j)-descriptor4(k,i))^2;
+        end
+    end
+    [value, class] = min(dis_des_centero);
+    feature_class_4(i) = class;
+end
+
+hist_cat = zeros(1, 8);
+for i = 1:nfeature4
+    hist_cat(feature_class_4(i)) = hist_cat(feature_class_4(i)) + 1;
+end
+
+figure(figcount);
+bar(hist_cat);
+ylim([0 (max(hist_cat)+5)])
+title('Histogram of Cat Features');
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\hist_cat.jpg'];
+% saveas(gcf,filepath);
+
+
+end
+function []=hw4problem3b()
+
+Dog_1 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_1.png'));
+Dog_2 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_2.png'));
+Dog_3 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_3.png'));
+Cat = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Cat.png'));
+
+Dog_1_gray = single(rgb2gray(Dog_1));
+Dog_2_gray = single(rgb2gray(Dog_2));
+Dog_3_gray = single(rgb2gray(Dog_3));
+Cat_gray = single(rgb2gray(Cat));
+
+
+%%%%%%%%%%%%%%%% Plot 1
+[feature1,descriptor1] = vl_sift(Dog_1_gray,'PeakThresh', 0.015, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+[feature3,descriptor3] = vl_sift(Dog_3_gray,'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+
+[matches, scores] = vl_ubcmatch(descriptor1,descriptor3); % match stores the relative position of 1 and 2 image separately 1st at match(1,:)
+[sortindex,~]=bubblesortValueIndex(scores);
+matches = matches(:, sortindex) ;
+[~,nd1]=size(Dog_1_gray);
+%%% plot original image
+figcount=1;
+figure(figcount);
+imagesc(cat(2, Dog_1, Dog_3)) ;
+hold on ;
+%%% plot matched feature points
+xaxis1 = feature1(1,matches(1,:)) ;        % use relative position to find x location and y location x is one f1(1,:) y is on f1(2,:)
+xaxis2 = feature3(1,matches(2,:)) + nd1 ; % add column of 1st picture Dog_1 to obtain a image with size of both images combined
+yaxis1 = feature1(2,matches(1,:)) ;
+yaxis2 = feature3(2,matches(2,:)) ;
+coordinate = line([xaxis1 ; xaxis2], [yaxis1 ; yaxis2]) ;
+set(coordinate,'linewidth', 1, 'color', 'b') ;
+vl_plotframe(feature1(:,matches(1,:))) ;
+feature3(1,:) = feature3(1,:) + nd1 ; %%% give an offset on x axis to show on the cat image correctly
+vl_plotframe(feature3(:,matches(2,:))) ;
+axis image off ;
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\feature_matchplot1.jpg'];
+% saveas(gcf,filepath);
+figcount=figcount+1;
+
+%%%%%%%%%%%%%%%%%%%%%% Plot 2 
+[feature2,descriptor2] = vl_sift(Dog_2_gray,'PeakThresh', 0.03, 'EdgeThresh',5);
+[feature3,descriptor3] = vl_sift(Dog_3_gray, 'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+
+[matches, scores] = vl_ubcmatch(descriptor3,descriptor2); 
+[sortindex,~]=bubblesortValueIndex(scores);
+[~,nd3]=size(Dog_3_gray);
+matches = matches(:, sortindex) ;
+
+figure(figcount);
+imagesc(cat(2, Dog_3, Dog_2)) ;
+hold on ;
+
+xaxis1 = feature3(1,matches(1,:)) ;
+xaxis2 = feature2(1,matches(2,:)) + nd3 ;
+yaxis1 = feature3(2,matches(1,:)) ;
+yaxis2 = feature2(2,matches(2,:)) ;
+coordinate = line([xaxis1 ; xaxis2], [yaxis1 ; yaxis2]) ;
+set(coordinate,'linewidth', 1, 'color', 'b') ;
+vl_plotframe(feature3(:,matches(1,:))) ;
+feature2(1,:) = feature2(1,:) + nd3 ;
+vl_plotframe(feature2(:,matches(2,:))) ;
+axis image off ;
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\feature_matchplot2.jpg'];
+% saveas(gcf,filepath);
+figcount=figcount+1;
+
+%%%%%%%%%%%%%%%%%%%% Plot 3
+[feature3,descriptor3] = vl_sift(Dog_3_gray,'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+[feature4,descriptor4] = vl_sift(Cat_gray,'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+
+[matches, scores] = vl_ubcmatch(descriptor3,descriptor4); 
+
+[sortindex,~]=bubblesortValueIndex(scores);
+matches = matches(:, sortindex) ;
+
+figure(figcount);
+imagesc(cat(2, Dog_3, Cat)) ;
+hold on ;
+
+xaxis1 = feature3(1,matches(1,:)) ;
+xaxis2 = feature4(1,matches(2,:)) + nd3 ;
+yaxis1 = feature3(2,matches(1,:)) ;
+yaxis2 = feature4(2,matches(2,:)) ;
+
+coordinate = line([xaxis1 ; xaxis2], [yaxis1 ; yaxis2]) ;
+set(coordinate,'linewidth', 1, 'color', 'b') ;
+vl_plotframe(feature3(:,matches(1,:))) ;
+feature4(1,:) = feature4(1,:) + nd3 ;
+vl_plotframe(feature4(:,matches(2,:))) ;
+axis image off ;
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\feature_matchplot3.jpg'];
+% saveas(gcf,filepath);
+figcount=figcount+1;
+
+%%%%%%%%%%%%%%%%%%%%% Plot 4
+[feature1,descriptor1] = vl_sift(Dog_1_gray,'PeakThresh', 0.015, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+[feature4,descriptor4] = vl_sift(Cat_gray, 'PeakThresh', 0.02, 'Levels', 4, 'Octaves', 5, 'Magnif', 2);
+
+[matches, scores] = vl_ubcmatch(descriptor1,descriptor4); 
+
+[sortindex,~]=bubblesortValueIndex(scores);
+matches = matches(:, sortindex) ;
+
+figure(figcount);
+imagesc(cat(2, Dog_1, Cat)) ;
+hold on ;
+
+xaxis1 = feature1(1,matches(1,:)) ;
+xaxis2 = feature4(1,matches(2,:)) + nd1 ;
+yaxis1 = feature1(2,matches(1,:)) ;
+yaxis2 = feature4(2,matches(2,:)) ;
+
+coordinate = line([xaxis1 ; xaxis2], [yaxis1 ; yaxis2]) ;
+set(coordinate,'linewidth', 1, 'color', 'b') ;
+vl_plotframe(feature1(:,matches(1,:))) ;
+feature4(1,:) = feature4(1,:) + nd1 ;
+vl_plotframe(feature4(:,matches(2,:))) ;
+axis image off ;
+% filepath=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem3\feature_matchplot4.jpg'];
+% saveas(gcf,filepath);
+
+end
+function []=hw4problem3a()
+%addpath(genpath('D:\MATLAB2020a\vlfeat-0.9.21'));
+% run('D:\MATLAB2020a\vlfeat-0.9.21\toolbox\vl_setup');
+% 
+% vl_version verbose
+Dog_1 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_1.png'));
+Dog_3 = im2single(imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\Dog_3.png'));
+
+Dog_1_g = single(rgb2gray(Dog_1));
+Dog_3_g = single(rgb2gray(Dog_3));
+
+[feature1,descriptor1] = vl_sift(Dog_1_g);
+[feature3,descriptor3] = vl_sift(Dog_3_g);
+
+scale_vector_dog3 = feature3(3, :); %%% the third row contains the scales
+[maxindex_3,~]=bubblesortValueIndex(scale_vector_dog3);
+d3_max = descriptor3(:, maxindex_3(1,1));
+f3_max = feature3(:, maxindex_3(1,1));
+
+%%%% kdtree search
+kdtree=vl_kdtreebuild(double(descriptor1));
+[mindistance_index,~]=vl_kdtreequery(kdtree,double(descriptor1),double(d3_max));
+point_matched_f=feature1(:,mindistance_index);
+%point_matched_d=descriptor1(:,mindistance_index);
+
+figcount=1;
+figure(figcount);
+imshow(Dog_3);
+hold on
+imgoutput1 = vl_plotframe(f3_max) ; 
+set(imgoutput1,'color','y','linewidth',5);
+figcount=figcount+1;
+
+figure(figcount);
+imshow(Dog_1);
+hold on
+imgoutput2 = vl_plotframe(point_matched_f) ;
+set(imgoutput2,'color','y','linewidth',5);
+
+end
+function [sortindex,sortvalue]=bubblesortValueIndex(orivector)
+%%% biggest at the front
+vec_length=length(orivector);
+sortindex=zeros(1,vec_length);
+for i=1:vec_length
+    sortindex(1,i)=i;
+end
+
+for p=1:vec_length
+    for q=1:vec_length-p
+        if orivector(1,q) < orivector(1,q+1)
+            
+            temppixelnum=orivector(1,q);
+            orivector(1,q)=orivector(1,q+1);
+            orivector(1,q+1)=temppixelnum;
+            
+            tempvalue=sortindex(1,q);
+            sortindex(1,q)=sortindex(1,q+1);
+            sortindex(1,q+1)=tempvalue;
+            
+        end
+    end
+end
+sortvalue=orivector;
+
+end
+function label_image=labelmapToImg(label_map, label_num)
+[m,n] = size(label_map);
+label_image = zeros(m,n);
+label_table=zeros(1,label_num);
+interval = floor(255 / (label_num - 1));
+for i=1:label_num
+    if i==label_num
+        label_table(1,i)=255;
+        continue;
+    end
+    label_table(1,i)=(i-1)*interval+1;
+    
+end
+
+for i=1:m
+    for j=1:n
+        label_image(i,j) = label_table(1,label_map(i,j));
+    end
+end
+
+end
+function []=hw4problem2b()
+img=imread('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\HW4_material\composite_updated.png');
+figcount=1;
+figure(figcount);
+imshow(uint8(img));
+% filename=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem2\ori_composite_img.jpg'];
+% saveas(gcf,filename);
+figcount=figcount+1;
+[m,n]=size(img);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%img = SubtractGlobalMean(img);
+fea_map_25_layer = CalFeatureMap(img);
+
+%%%%% Result of Gaussian Fliter with Sigma=10 with Different Radius
+radius_vector=[3];
+sigma=10;
+for radius=radius_vector
+    energy_map_25_layer_mn=filterFeaMap_Gaussian(fea_map_25_layer,radius,sigma);
+    energy_map_25_divided_mn=matrix_interlayer_divide(energy_map_25_layer_mn,energy_map_25_layer_mn(:,:,1));
+    %%% 25 features to 24 features
+    energy_map_24_mn = energy_map_25_divided_mn(:,:,2:end);
+    energy_map_24_reshaped=matrixToRowReshape(energy_map_24_mn); % reshape matrix to row
+    %%% PCA
+    energy_map_24_reshaped_pca = PrincipleComponentAnalysis(energy_map_24_reshaped', 3);
+    %%% Kmeans
+    label_24 = kmeans(energy_map_24_reshaped_pca', 5, 'MaxIter', 2000);% my pca
+    labelmap_24=rowToMatrixReshape(label_24',m,n);
+    %%%label map to img
+    labelimg_24 = labelmapToImg(labelmap_24, 5);
+    figure(figcount);
+    imshow(uint8(labelimg_24));
+    titlecontent=['filter radius = ' num2str(radius)];
+    title(titlecontent);
+    
+%     filename=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem2\label_img_GaussianFilter_PCA_radius=' num2str(radius) '.jpg'];
+%     saveas(gcf,filename);
+    figcount=figcount+1;
+end
+
+radiustable=[5,9,10];
+oldlabelmapfiltered=labelimg_24;
+
+for radius=radiustable
+    
+    labelmapfiltered=imgMajorPulling(oldlabelmapfiltered,radius);
+    oldlabelmapfiltered=labelmapfiltered;
+    
+    figure(figcount);
+    imshow(uint8(labelmapfiltered));
+    titlecontent=['mode filter radius = ' num2str(radius)];
+    title(titlecontent);
+    
+%     filename=['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw4\hw4_result\problem2\label_img_GaussianFilter_PCA_moderadius=' num2str(radius) '.jpg'];
+%     saveas(gcf,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+
+end
+function imgfiltered=imgMajorPulling(imgori,r)
+[m,n]=size(imgori);
+imgpad=hw4ReflecPadding(imgori,r);
+imgfiltered=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        valuehist=zeros(1,255);
+       
+        for p=1:2*r+1
+            for q=1:2*r+1
+                valuehist(1,imgpad(i+p-1,j+q-1))=valuehist(1,imgpad(i+p-1,j+q-1))+1;
+            end
+        end
+        [valueindex,~]=bubblesortValueIndex(valuehist);
+        imgfiltered(i,j)=valueindex(1,1);
+    end
+end
+
+
+end

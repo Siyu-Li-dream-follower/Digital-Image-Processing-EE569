@@ -1,0 +1,2628 @@
+%EE569 HOMEWORK ASSIGNMENT 3
+%DATE: Mar 11th 2021
+%NAME: Siyu Li
+%ID:2455870216
+%E-mail:lisiyu@usc.edu
+function []=hw3problem1()
+%%%%%%% dog
+imgDog=hw3readraw('Dog.raw',329,329,3);
+figcount=1;
+figure(figcount);
+imshow(uint8(imgDog));
+figcount=figcount+1;
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\imgdogOri.jpg'];
+% saveas(gcf,filename);
+%%%%%%% dog wrap
+imgDogwrapped=imagewarpingSquareToCircle(imgDog);
+
+figure(figcount);
+imshow(uint8(imgDogwrapped));
+figcount=figcount+1;
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\imgdogwrapped.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1raw\imgdogwrapped.raw'];
+% hw3writeraw(imgDogwrapped,filename);
+%%%%%%% dog unwrap
+imgDogunwrapped=imageunwrapingCircleToSquare(imgDogwrapped);
+
+figure(figcount);
+imshow(uint8(imgDogunwrapped));
+figcount=figcount+1;
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\imgdogunwrapped.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1raw\imgdogunwrapped.raw'];
+% hw3writeraw(imgDogunwrapped,filename);
+%%%%%%% 22 wrap
+img22=hw3readraw('22.raw',329,329,3);
+
+figure(figcount);
+imshow(uint8(img22));
+figcount=figcount+1;
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\img22ori.jpg'];
+% saveas(gcf,filename);
+%%%%%%% 22 wrap
+img22wrapped=imagewarpingSquareToCircle(img22);
+
+figure(figcount);
+imshow(uint8(img22wrapped));
+figcount=figcount+1;
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\img22wrapped.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1raw\img22wrapped.raw'];
+% hw3writeraw(img22wrapped,filename);
+%%%%%%% 22 unwrap
+img22unwrapped=imageunwrapingCircleToSquare(img22wrapped);
+
+figure(figcount);
+imshow(uint8(img22unwrapped));
+figcount=figcount+1;
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\img22unwrapped.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1raw\img22unwrapped.raw'];
+% hw3writeraw(img22unwrapped,filename);
+
+%%%%%%% Forky wrap
+imgForky=hw3readraw('Forky.raw',329,329,3);
+
+figure(figcount);
+imshow(uint8(imgForky));
+figcount=figcount+1;
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\imgForkyOri.jpg'];
+% saveas(gcf,filename);
+%%%%%%% Forky wrap
+imgForkywrapped=imagewarpingSquareToCircle(imgForky);
+
+figure(figcount);
+imshow(uint8(imgForkywrapped));
+figcount=figcount+1;
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\imgForkywrapped.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1raw\imgForkywrapped.raw'];
+% hw3writeraw(imgForkywrapped,filename);
+%%%%%%% Forky unwrap
+imgForkyunwrapped=imageunwrapingCircleToSquare(imgForkywrapped);
+
+figure(figcount);
+imshow(uint8(imgForkyunwrapped));
+
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1\imgForkyunwrapped.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem1raw\imgForkyunwrapped.raw'];
+% hw3writeraw(imgForkyunwrapped,filename);
+
+end
+function []=hw3problem2()
+ori_left = imread('left.png');
+ori_right = imread('right_updated.png');
+ori_middle = imread('middle.png');
+
+%%% detect feature
+gray_left = rgb2gray(ori_left); 
+gray_middle = rgb2gray(ori_middle);
+gray_right = rgb2gray(ori_right);
+
+original_fea_points_left = detectSURFFeatures(gray_left);
+original_fea_points_middle = detectSURFFeatures(gray_middle);
+original_fea_points_right = detectSURFFeatures(gray_right);
+
+[select_feature_left,validpoints_left] = extractFeatures(gray_left,original_fea_points_left); % select_feature_left location information of all features validpoints_left all information of features
+[select_feature_middle,validpoints_middle] = extractFeatures(gray_middle,original_fea_points_middle);
+[select_feature_right,validpointpts_right] = extractFeatures(gray_right,original_fea_points_right);
+
+indexPairs_rightWithMiddle = matchFeatures(select_feature_right,select_feature_middle);
+matchedPoints_in_right = validpointpts_right(indexPairs_rightWithMiddle(:,1));
+matchedPoints_in_middle_with_right = validpoints_middle(indexPairs_rightWithMiddle(:,2));
+
+indexPairs_leftWithMiddle = matchFeatures(select_feature_left,select_feature_middle);
+matchedPoints_in_left = validpoints_left(indexPairs_leftWithMiddle(:,1));
+matchedPoints_in_middle_with_left = validpoints_middle(indexPairs_leftWithMiddle(:,2));
+
+
+figure;
+showMatchedFeatures(ori_left,ori_middle,matchedPoints_in_left,matchedPoints_in_middle_with_left,'montage');
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\matchedpoints_left_middle.tif'];
+% saveas(gcf,filename);
+
+figure;
+showMatchedFeatures(ori_middle,ori_right,matchedPoints_in_middle_with_right,matchedPoints_in_right,'montage');
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\matchedpoints_right_middle.tif'];
+% saveas(gcf,filename);
+
+%%%
+% selected key point by observing the matched feature points manually to
+% get the correct point
+% 1st layer [2,5,19,21] 2nd layer [4,8,11,18]
+selected_fea_point_in_left =  matchedPoints_in_left([2,5,19,21],:);
+selected_fea_point_in_middle_with_left = matchedPoints_in_middle_with_left([2,4,19,21],:);
+
+selected_fea_point_in_right = matchedPoints_in_right([4,8,11,18],:);
+selected_fea_point_in_middle_with_right = matchedPoints_in_middle_with_right([4,8,11,18],:);
+figure;
+showMatchedFeatures(ori_left, ori_middle, selected_fea_point_in_left, selected_fea_point_in_middle_with_left, 'montage'); 
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\selectedPoints_left_middle.tif'];
+% saveas(gcf,filename);
+
+figure;
+showMatchedFeatures(ori_middle, ori_right, selected_fea_point_in_middle_with_right, selected_fea_point_in_right, 'montage'); 
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\selectedPoints_right_middle.tif'];
+% saveas(gcf,filename);
+
+%%%%%% Transform and concatinate middle and right
+%%%%%% cell to matrix
+%%%%%% coordinate transform
+[~, n_middle] = size(gray_middle);
+%%% Right Middle
+select_fea_location_matrix_in_right = selected_fea_point_in_right.Location; % column1 x ; column2 y
+select_fea_location_matrix_in_middle_with_right= selected_fea_point_in_middle_with_right.Location;
+select_fea_location_matrix_in_middle_with_right(:, 1)= select_fea_location_matrix_in_middle_with_right(:, 1) - n_middle; % calculate x position in the combined image
+%%%% calculate transform matrix
+H_right_warp_toMiddle = cal_transform_Hmatrix(select_fea_location_matrix_in_right, select_fea_location_matrix_in_middle_with_right);
+
+locator_in_right_mid = [select_fea_location_matrix_in_right(1,1),select_fea_location_matrix_in_right(1,2)];
+locator_in_mid_right = [select_fea_location_matrix_in_middle_with_right(1,1),select_fea_location_matrix_in_middle_with_right(1,2)];
+
+[wrapped_right, cat_wrapped_rm, mid_right_locator_I, ~, location_rightmid] = right_matrix_warp_concatination(ori_right, H_right_warp_toMiddle, ori_middle, locator_in_right_mid, locator_in_mid_right);
+
+%%% Left Middle
+select_fea_location_matrix_in_left = selected_fea_point_in_left.Location;
+select_fea_location_matrix_in_middle_with_left= selected_fea_point_in_middle_with_left.Location;
+select_fea_location_matrix_in_middle_with_left(:, 1)= select_fea_location_matrix_in_middle_with_left(:, 1) + n_middle;
+%%%% calculate transform matrix
+H_left_wrap_toMiddle = cal_transform_Hmatrix(select_fea_location_matrix_in_left, select_fea_location_matrix_in_middle_with_left);
+
+locator_in_left_mid =[select_fea_location_matrix_in_left(1,1),select_fea_location_matrix_in_left(1,2)];
+locator_in_mid_left = [select_fea_location_matrix_in_middle_with_left(1,1),select_fea_location_matrix_in_middle_with_left(1,2)];
+
+[wrapped_left, cat_wrapped_lm, mid_left_locator_I, ~, location_leftmid] = left_matrix_warp_concatination(ori_left, H_left_wrap_toMiddle, ori_middle, locator_in_left_mid, locator_in_mid_left);
+
+figure;
+imshow(uint8(wrapped_right));
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\wrapped_right.tif'];
+% saveas(gcf,filename);
+
+figure;
+imshow(uint8(wrapped_left)); 
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\wrapped_left.tif'];
+% saveas(gcf,filename);
+
+figure;
+imshow(uint8(cat_wrapped_lm)); 
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\combined_left_middle.tif'];
+% saveas(gcf,filename);
+
+figure;
+imshow(uint8(cat_wrapped_rm));
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\combined_right_middle.tif'];
+% saveas(gcf,filename);
+
+%%% concatinate the final image
+[m_left, n_left] = size(cat_wrapped_lm(:, :, 1));
+[m_right, n_right] = size(cat_wrapped_rm(:, :, 1));
+
+loc_I = mid_right_locator_I - mid_left_locator_I;
+
+temp_left_R = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+temp_left_G = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+temp_left_B = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+temp_left_R(loc_I + 1: loc_I + m_left, 1: n_left) = cat_wrapped_lm(:, :, 1);
+temp_left_G(loc_I + 1: loc_I + m_left, 1: n_left) = cat_wrapped_lm(:, :, 2);
+temp_left_B(loc_I + 1: loc_I + m_left, 1: n_left) = cat_wrapped_lm(:, :, 3);
+
+temp_right_R = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+temp_right_G = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+temp_right_B = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+temp_right_R(1: m_right, n_left - n_middle + 1: n_left - n_middle + n_right) = cat_wrapped_rm(:, :, 1);
+temp_right_G(1: m_right, n_left - n_middle + 1: n_left - n_middle + n_right) = cat_wrapped_rm(:, :, 2);
+temp_right_B(1: m_right, n_left - n_middle + 1: n_left - n_middle + n_right) = cat_wrapped_rm(:, :, 3);
+
+loc_left = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+loc_right = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+loc_left(loc_I + 1: loc_I + m_left, 1: n_left) = location_leftmid;
+loc_right(1: m_right, n_left - n_middle + 1: n_left - n_middle + n_right) = location_rightmid;
+
+ressult_R = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+result_G = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+result_B = zeros(max(m_left, m_right), n_left + n_right - n_middle);
+
+for i = 1:max(m_left, m_right)
+    for j = 1: n_left + n_right - n_middle
+        if loc_left(i,j) == 1 && loc_right(i,j) == 1
+            ressult_R(i,j) = (1/2)*(temp_left_R(i, j) + temp_right_R(i, j));
+            result_G(i,j) = (1/2)*(temp_left_G(i, j) + temp_right_G(i, j));
+            result_B(i,j) = (1/2)*(temp_left_B(i, j) + temp_right_B(i, j));
+        else
+            if loc_left(i,j) == 1
+                ressult_R(i,j) = temp_left_R(i, j, 1);
+                result_G(i,j) = temp_left_G(i, j, 1);
+                result_B(i,j) = temp_left_B(i, j, 1);
+            end
+            if loc_right(i,j) == 1
+                ressult_R(i,j) = temp_right_R(i, j, 1);
+                result_G(i,j) = temp_right_G(i, j, 1);
+                result_B(i,j) = temp_right_B(i, j, 1);
+            end
+        end
+        
+    end
+end
+
+result(:, :, 1) = ressult_R;
+result(:, :, 2) = result_G;
+result(:, :, 3) = result_B;
+figure;
+imshow(uint8(result));
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem2\final_result.tif'];
+% saveas(gcf,filename);
+
+end
+
+function []=hw3problem3a()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Shrinking
+%%%%%%%%%%% shrinking spring.raw
+img_ori=hw3readraw('spring.raw',252,252,1);
+[m,n]=size(img_ori);
+figcount=1;
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original spring']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\spring_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\spring_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% shrinking
+for countmax=[7,15,30,1000]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_S = stage1Filter_S(bond, imgnew);
+        existanceMap = stage2Filter_ST(stage1result_S);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Shringking Result spring.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\spring_shrinking_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\spring_shrinking_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%% shrinking flower.raw
+img_ori=hw3readraw('flower.raw',247,247,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original flower']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\flower_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\flower_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% shrinking
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_S = stage1Filter_S(bond, imgnew);
+        existanceMap = stage2Filter_ST(stage1result_S);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Shringking Result flower.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\flower_shrinking_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\flower_shrinking_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%% shrinking jar.raw
+img_ori=hw3readraw('jar.raw',252,252,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original jar']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\jar_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\jar_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% shrinking
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_S = stage1Filter_S(bond, imgnew);
+        existanceMap = stage2Filter_ST(stage1result_S);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Shringking Result jar.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\jar_shrinking_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\jar_shrinking_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Thining
+%%%%%%%%%%% thining spring.raw
+img_ori=hw3readraw('spring.raw',252,252,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original spring']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\spring_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\spring_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% thining
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_T = stage1Filter_T(bond, imgnew);
+        existanceMap = stage2Filter_ST(stage1result_T);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Thining Result spring.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\spring_thining_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\spring_thining_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%% thining flower.raw
+img_ori=hw3readraw('flower.raw',247,247,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original flower']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\flower_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\flower_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% thining
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_T = stage1Filter_T(bond, imgnew);
+        existanceMap = stage2Filter_ST(stage1result_T);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Thining Result flower.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\flower_thining_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\flower_thining_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%% thining jar.raw
+img_ori=hw3readraw('jar.raw',252,252,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original jar']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\jar_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\jar_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% thining
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_T = stage1Filter_T(bond, imgnew);
+        existanceMap = stage2Filter_ST(stage1result_T);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Thining Result jar.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\jar_thining_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\jar_thining_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Skeletonizing
+%%%%%%%%%%% Skeletonizing spring.raw
+img_ori=hw3readraw('spring.raw',252,252,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original spring']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\spring_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\spring_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% Skeletonizing
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_K = stage1Filter_K(bond, imgnew);
+        existanceMap = stage2Filter_K(stage1result_K);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Skeletonizing Result spring.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\spring_Skeletonizing_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\spring_Skeletonizing_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%% Skeletonizing flower.raw
+img_ori=hw3readraw('flower.raw',247,247,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original flower']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\flower_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\flower_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% Skeletonizing
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_K = stage1Filter_K(bond, imgnew);
+        existanceMap = stage2Filter_K(stage1result_K);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Skeletonizing Result flower.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\flower_Skeletonizing_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\flower_Skeletonizing_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+%%%%%%%%%%% Skeletonizing jar.raw
+img_ori=hw3readraw('jar.raw',252,252,1);
+[m,n]=size(img_ori);
+
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original jar']);
+
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\jar_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\jar_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+figcount=figcount+1;
+img_bin=thresholdToBinary(img_ori,60);
+
+%%%%% Skeletonizing
+for countmax=[7,15,30,200]
+    count = 0;
+    imgold = zeros(m,n);
+    imgnew=img_bin;
+    logicvalue=1;
+    
+    while logicvalue ~= 0
+        
+        if count == countmax
+            break
+        end
+        
+        bond = calculateBond(imgnew);
+        
+        stage1result_K = stage1Filter_K(bond, imgnew);
+        existanceMap = stage2Filter_K(stage1result_K);
+        
+        imgold = imgnew;
+        
+        imgnew = pixelDelete(imgnew, existanceMap);
+        
+        logicvalue=LoopStopCriteria(imgnew,imgold);
+        count = count + 1;
+        
+    end
+    
+    figure(figcount);
+    imshow(imgnew);
+    titlecontent=['Skeletonizing Result jar.raw iteration= ' num2str(count)];
+    title(titlecontent);
+%     filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\jar_Skeletonizing_iter=' num2str(count) '.jpg'];
+%     saveas(gcf,filename);
+%     
+%     filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\jar_Skeletonizing_iter=' num2str(count) '.raw'];
+%     hw3writeraw(imgnew,filename);
+    
+    figcount=figcount+1;
+    
+end
+
+end
+
+function []=hw3problem3b()
+img_ori=hw3readraw('maze.raw',343,343,1);
+figcount=1;
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original maze']);
+figcount=figcount+1;
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\maze_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\maze_ori.raw'];
+% hw3writeraw(img_ori,filename);
+img_bin=thresholdToBinary(img_ori,50);
+
+count = 0;
+imgnew=img_bin;
+logicvalue=1;
+countmax=1000;
+while logicvalue ~= 0
+    
+    if count == countmax
+        break
+    end
+    
+    bond = calculateBond(imgnew);
+    
+    stage1result_S = stage1Filter_S(bond, imgnew);
+    existanceMap = stage2Filter_ST(stage1result_S);
+    
+    imgold = imgnew;
+    
+    imgnew = pixelDelete(imgnew, existanceMap);
+    
+    logicvalue=LoopStopCriteria(imgnew,imgold);
+    count = count + 1;
+    
+end
+imgshrinked=imgnew;
+imgfinal=hw3matrixmulconstant(hw3matrixadd(img_bin,imgshrinked),0.5);
+imshow(imgfinal);
+
+figure(figcount);
+imshow(imgfinal);
+titlecontent=['Shringking Result maze.raw with Iteration= ' num2str(count)];
+title(titlecontent);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\maze_shrinking_result.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\maze_shrinking_result.raw'];
+% hw3writeraw(imgfinal,filename);
+
+
+
+end
+
+function []=hw3problem3c1()
+img_ori=hw3readraw('horse.raw',322,422,1);
+[m,n]=size(img_ori);
+figcount=1;
+figure(figcount);
+imshow(uint8(img_ori));
+title(['original horse']);
+figcount=figcount+1;
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_ori.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_ori.raw'];
+% hw3writeraw(img_ori,filename);
+
+threshold=128;
+img_bin=thresholdToBinary(img_ori,threshold);
+figure(figcount);
+imshow(img_bin);
+title(['Threshold= ' num2str(threshold)]); 
+figcount=figcount+1;
+%imgshrinked=bwmorph((1-img_bin),'shrink',Inf);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_bin_thresh=' num2str(threshold) '.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_bin_thresh=' num2str(threshold) '.raw'];
+% hw3writeraw(img_bin,filename);
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+imgnew=hw3matrixsubtract(ones(m,n),img_bin);
+
+figure(figcount);
+imshow(imgnew);
+title(['Thresholded and Inversed Image with Threshold= ' num2str(threshold)]); 
+figcount=figcount+1;
+%imgshrinked=bwmorph((1-img_bin),'shrink',Inf);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_bin_reversed.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_bin_reversed.raw'];
+% hw3writeraw(img_bin,filename);
+
+count = 0;
+logicvalue=1;
+countmax=500;
+while logicvalue ~= 0
+    
+    if count == countmax
+        break
+    end
+    
+    bond = calculateBond(imgnew);
+    
+    stage1result_S = stage1Filter_S(bond, imgnew);
+    existanceMap = stage2Filter_ST(stage1result_S);
+    
+    imgold = imgnew;
+    
+    imgnew = pixelDelete(imgnew, existanceMap);
+    
+    logicvalue=LoopStopCriteria(imgnew,imgold);
+    count = count + 1;
+    
+end
+imgshrinked=imgnew;
+
+figure(figcount);
+imshow(imgshrinked);
+title(['horse defect shrinked iteration= ' num2str(count)]);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_shrinked.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_shrinked.raw'];
+% hw3writeraw(imgshrinked,filename);
+defectnumber=countIsolatePoint(imgshrinked);
+
+disp(['Number of Defect= ' num2str(defectnumber)]);
+
+
+end
+
+function []=hw3problem3c2()
+img_ori=hw3readraw('horse.raw',322,422,1);
+img_bin=thresholdToBinary(img_ori,128);
+[m,n]=size(img_ori);
+imgnew=hw3matrixsubtract(ones(m,n),img_bin);
+AlonePointVector = [];
+count=0;
+logicvalue=1;
+while logicvalue
+    AlonePointVector(1,(count+1)) = countIsolatePoint(imgnew);
+    imgold=imgnew;
+    bond = calculateBond(imgnew);
+    
+    stage1result_S = stage1Filter_S(bond, imgnew);
+    existanceMap = stage2Filter_ST(stage1result_S);
+    
+    imgnew = pixelDelete(imgnew, existanceMap);
+    %imgnew = bwmorph(imgnew, 'shrink', 1);
+    logicvalue=LoopStopCriteria(imgnew,imgold);
+    count=count+1;
+end
+defect_size=zeros(1,count-1);
+len=length(AlonePointVector) - 1;
+for i = 1:len
+    defect_size(1,i) = AlonePointVector(i + 1) - AlonePointVector(i);
+end
+figure(1);
+x_axis=1:len;
+bar(x_axis,defect_size);
+xlabel('defect size measured by number of shrink iterations');
+ylabel('number of defect');
+title(['Number of Iterations= ' num2str(count)]);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_hist.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_hist.raw'];
+% hw3writeraw(defect_size,filename);
+
+%%%%%%%%%%%%%%% Delete Outlier
+count = 0;
+imgnew=hw3matrixsubtract(ones(m,n),img_bin);
+countmax=50;
+AlonePointVector = zeros(1,countmax);
+logicvalue=1;
+while logicvalue
+    if count==countmax
+        break
+    end
+    AlonePointVector(1,(count+1)) = countIsolatePoint(imgnew);
+    imgold=imgnew;
+    bond = calculateBond(imgnew);
+    
+    stage1result_S = stage1Filter_S(bond, imgnew);
+    existanceMap = stage2Filter_ST(stage1result_S);
+    
+    imgnew = pixelDelete(imgnew, existanceMap);
+    %imgnew = bwmorph(imgnew, 'shrink', 1);
+    logicvalue=LoopStopCriteria(imgnew,imgold);
+    count = count + 1;
+end
+defect_size=zeros(1,count-1);
+len=length(AlonePointVector) - 1;
+for i = 1:len
+    defect_size(1,i) = AlonePointVector(1,i + 1) - AlonePointVector(1,i);
+end
+figure(2);
+x_axis=1:len;
+bar(x_axis,defect_size);
+xlabel('defect size measured by number of shrink iterations with outlier removal');
+ylabel('number of defect');
+title(['Number of Iterations= ' num2str(count)]);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_hist_outlier_removed.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_hist_outlier_removed.raw'];
+% hw3writeraw(defect_size,filename);
+
+end
+
+function []=hw3problem3c3and4()
+img_ori=hw3readraw('horse.raw',322,422,1);
+[m,n]=size(img_ori);
+%%%%%%%% To have a better effect of clear horse we should set threshold very approximate to 255
+%%%%%%%% Here threshold=250
+threshold=250;
+img_bin=thresholdToBinary(img_ori,threshold);
+imgnew=hw3matrixsubtract(ones(m,n),img_bin);
+%%%%%% CCL detection
+labelmapfinal=CCL_LabelMap(imgnew);
+%%%%%% See the defect detected ( already delete no label part 0 and background 1)
+labelmapreduced=zeros(m,n);
+for i=1:m
+    for j=1:n
+        if labelmapfinal(i,j)>1
+            labelmapreduced(i,j)=255;
+        end
+    end
+end
+figcount=1;
+figure(figcount);
+imshow(uint8(labelmapreduced));
+title(['Horse Defect Detected']);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_detected_t=' num2str(threshold) '.jpg'];
+% saveas(gcf,filename);
+
+figcount=figcount+1;
+%%%% process clear horse with img_ori
+imgfinal=zeros(m,n);
+for i=1:m
+    for j=1:n
+        if labelmapfinal(i,j)>1
+            imgfinal(i,j)=255+img_ori(i,j);
+        else
+            imgfinal(i,j)=img_ori(i,j);
+        end
+        if imgfinal(i,j)>255
+            imgfinal(i,j)=255;
+        else
+            imgfinal(i,j)=imgfinal(i,j);
+        end
+    end
+end
+
+%figcount=1;
+figure(figcount);
+imshow(uint8(imgfinal));
+titlecontent=['Clear Horse With Original Image Threshold= ' num2str(threshold)];
+title(titlecontent);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\clear_horse_threshold=' num2str(threshold) '.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\clear_horse_threshold' num2str(threshold) '.raw'];
+% hw3writeraw(imgfinal,filename);
+figcount=figcount+1;
+%%%% process clear horse with img_bin
+imgfinal=zeros(m,n);
+for i=1:m
+    for j=1:n
+        if labelmapfinal(i,j)>1
+            imgfinal(i,j)=255+255*img_bin(i,j);
+        else
+            imgfinal(i,j)=255*img_bin(i,j);
+        end
+        if imgfinal(i,j)>255
+            imgfinal(i,j)=255;
+        else
+            imgfinal(i,j)=imgfinal(i,j);
+        end
+    end
+end
+
+%figcount=1;
+figure(figcount);
+imshow(uint8(imgfinal));
+titlecontent=['Clear Horse With Image Binary'];
+title(titlecontent);
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\clear_horse_with_image_bin.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\clear_horse_with_image_bin.raw'];
+% hw3writeraw(imgfinal,filename);
+figcount=figcount+1;
+%%%%%%%%%%%%%%%%%%%%%%% process original Label vs number of pixels plot (144 labels)
+%%%%%%%%%%% Threshold=128
+img_bin=thresholdToBinary(img_ori,128);
+imgnew=hw3matrixsubtract(ones(m,n),img_bin);
+%%%%%% CCL detection
+labelmapfinal=CCL_LabelMap(imgnew);
+labelmapHistOri=zeros(1,(max(max(labelmapfinal))+1));
+labelmapfinalpro=hw3matrixadd(labelmapfinal,ones(m,n));
+
+for i=1:m
+    for j=1:n
+        labelmapHistOri(1,labelmapfinalpro(i,j))=labelmapHistOri(1,labelmapfinalpro(i,j))+1;
+    end
+end
+figure(figcount);
+x_axis=0:max(max(labelmapfinal));
+bar(x_axis,labelmapHistOri);
+xlabel('Original Label of Defects');
+ylabel('Number of Pixels');
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_hist_ori_ccl_label_pixelnumber.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_hist_ori_ccl_label_pixelnumber.raw'];
+% hw3writeraw(labelmapHistOri,filename);
+figcount=figcount+1;
+
+labelmapHistOriDelBackground=labelmapHistOri(1,3:(max(max(labelmapfinal))+1));
+figure(figcount);
+x_axis=2:max(max(labelmapfinal));
+bar(x_axis,labelmapHistOriDelBackground);
+xlabel('Original Label of Defects Delete Background With Label 0,1');
+ylabel('Number of Pixels');
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_hist_ori_ccl_label_pixelnumber_del_background.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_hist_ori_ccl_label_pixelnumber_del_background.raw'];
+% hw3writeraw(labelmapHistOriDelBackground,filename);
+figcount=figcount+1;
+
+
+%%%%%%%%%%%%%%%%%%%%%% process reduced Label vs number of pixels plot (72 labels including background)
+
+len=length(labelmapHistOriDelBackground);
+numnonzero=0;
+for i=1:len
+    if labelmapHistOriDelBackground(1,i)~=0
+        numnonzero=numnonzero+1;
+    end
+end
+% Dispaly Total Number of Defects: reduced label number-1
+disp(['Number of Defects= ' num2str(numnonzero)]);
+%
+labelmapHistFinal=zeros(1,numnonzero);
+cnt=1;
+for i=1:len
+    if labelmapHistOriDelBackground(1,i)~=0
+    labelmapHistFinal(1,cnt)=labelmapHistOriDelBackground(1,i);
+    cnt=cnt+1;
+    end
+end
+figure(figcount);
+x_axis=2:(numnonzero+1);
+bar(x_axis,labelmapHistFinal);
+xlabel('Reduced Label of Defects Delete Background With Label 0,1');
+ylabel('Number of Pixels');
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_hist_reduced_ccl_label_pixelnumber.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_hist_reduced_ccl_label_pixelnumber.raw'];
+% hw3writeraw(labelmapHistFinal,filename);
+figcount=figcount+1;
+%%%%%%%%%%%%%%%%%%%%%% Dispaly Defect Size vs Number of This defect size 
+lenth=max(labelmapHistFinal);
+SizeNumberHist=zeros(1,lenth);
+for i=1:numnonzero
+    SizeNumberHist(1,labelmapHistFinal(1,i))=SizeNumberHist(1,labelmapHistFinal(1,i))+1;
+end
+figure(figcount);
+x_axis=1:lenth;
+bar(x_axis,SizeNumberHist);
+xlabel('Defect Size (Number of Pixels in Each Defect)');
+ylabel('Number of Defects in This Defect Size');
+% filename = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3\horse_defect_hist_reduced_ccl_size_Defectnumber.jpg'];
+% saveas(gcf,filename);
+% 
+% filename  =  ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw3\HW3RESULT\problem3raw\horse_defect_hist_reduced_ccl_size_Defectnumber.raw'];
+% hw3writeraw(SizeNumberHist,filename);
+%figcount=figcount+1;
+
+end
+
+function Hmatrix = cal_transform_Hmatrix(matched_on_side, matched_on_middle)
+
+%%%%% It is calculated from (0,0), -1 is mandatory in use.
+[m, ~] = size(matched_on_side);
+a = zeros(2*m, 8);
+b = zeros(2*m, 1);
+matched_on_side = matched_on_side-1;
+matched_on_middle = matched_on_middle-1;
+
+for i=1:m
+    a(2*i - 1, :) = [matched_on_side(i,1), matched_on_side(i,2), 1, 0, 0, 0,...
+        -matched_on_side(i,1)*matched_on_middle(i,1), -matched_on_side(i,2)*matched_on_middle(i,1)];
+    a(2*i, :) = [0, 0, 0, matched_on_side(i,1), matched_on_side(i,2), 1,...
+        -matched_on_side(i,1)*matched_on_middle(i,2), -matched_on_side(i,2)*matched_on_middle(i,2)];
+    
+    b(2*i - 1) = matched_on_middle(i,1);
+    b(2*i) = matched_on_middle(i,2);
+end
+
+temp = a \ b;
+
+tempnew=ones(9,1);
+for i=1:8
+    tempnew(i,1)=temp(i,1);
+end
+
+Hmatrix = zeros(3,3);
+index = 1;
+
+for i=1:3
+    for j=1:3
+        Hmatrix(i,j) = tempnew(index);
+        index = index + 1;
+    end
+end
+
+end
+function bond = calculateBond(img)
+[m, n] = size(img);
+imgpad = ReflecPadding(img, 1);
+bond = zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        
+        if imgpad(i + 1, j + 1) == 1
+            
+            for p=1:3
+                for q=1:3
+                    if imgpad(i+p-1,j+q-1)==1
+                        if mod(p+q,2)==1
+                            bond(i,j)=bond(i,j)+2;
+                        else
+                            bond(i,j)=bond(i,j)+1;
+                        end
+                    end
+                    
+                    
+                end
+            end
+            bond(i,j)=bond(i,j)-1; %remove the mistakenly added central value
+        end
+      
+    end
+end
+
+end
+            
+function [I_projected_max,J_projected_max,I_min_projected,J_min_projected,m_ori_side,n_ori_side]=calOutputSideSize(ori_side_gray,H_side_to_middle)
+
+[m_ori_side,n_ori_side] = size(ori_side_gray);
+[J_ori_side, I_ori_side] = oriPixelLocation(n_ori_side,m_ori_side); 
+I_ori_side_projected_middle = zeros(size(I_ori_side));
+J_ori_side_projected_middle = zeros(size(J_ori_side));
+% make ori point to (0,0)
+I_ori_side = hw3matrixadd(I_ori_side,-ones(m_ori_side,n_ori_side));
+J_ori_side = hw3matrixadd(J_ori_side,-ones(m_ori_side,n_ori_side));
+
+for i=1:m_ori_side
+    for j=1:n_ori_side
+        vector = [J_ori_side(i,j), I_ori_side(i,j), 1]';  
+        projected_result_matrix = H_side_to_middle * vector;
+        J_ori_side_projected_middle(i,j) = projected_result_matrix(1,1) / projected_result_matrix(3,1);
+        I_ori_side_projected_middle(i,j) = projected_result_matrix(2,1) / projected_result_matrix(3,1);
+    end
+end
+
+I_min_projected = min(min(I_ori_side_projected_middle)); 
+J_min_projected = min(min(J_ori_side_projected_middle)); 
+
+I_ori_side_projected_middle = I_ori_side_projected_middle - I_min_projected;
+J_ori_side_projected_middle = J_ori_side_projected_middle - J_min_projected;
+
+I_projected_max = floor(max(max(I_ori_side_projected_middle)))+1;
+J_projected_max = floor(max(max(J_ori_side_projected_middle)))+1;
+
+end
+
+function labelmapfinal=CCL_LabelMap(img)
+[m,n]=size(img);
+%%%%%%%%%%%% Step 1
+labelmap=zeros(m+2,n+2);
+label=1;
+
+for i=1:m
+    for j=1:n
+        if img(i,j)==1
+            if labelmap(i,j)==0 && labelmap(i,j+1)==0 && labelmap(i,j+2)==0 && labelmap(i+1,j)==0 %&& labelmap(i+1,j+1)==0
+                labelmap(i+1,j+1)=label;
+                label=label+1;
+            else
+                %if labelmap(i,j)==0 && labelmap(i,j+1)==0 && labelmap(i,j+2)==0 && labelmap(i+1,j)==0
+                labelsort=[labelmap(i,j),labelmap(i,j+1),labelmap(i,j+2),labelmap(i+1,j)];
+                
+                for p=1:3
+                    for q=1:3-p
+                        if labelsort(1,q) > labelsort(1,q+1)
+                            
+                            temp=labelsort(1,q);
+                            labelsort(1,q)=labelsort(1,q+1);
+                            labelsort(1,q+1)=temp;
+                            
+                        end
+                    end
+                end
+                
+                k=1;
+                while labelsort(1,k)==0
+                    if k==4
+                        break
+                    end
+                    k=k+1;
+                end
+                
+                labelmap(i+1,j+1)=labelsort(1,k);
+                    
+            end
+            
+        end
+        
+    end
+end
+labelmapnew=labelmap;
+%%%%%%%%%%%%%%%%%%%%% Step 2
+logicvalue=1;
+while logicvalue
+    labelmapold=labelmapnew;
+    
+    for i=1:m
+        for j=1:n
+            if labelmapnew(i+1,j+1) >0
+                neighbor_8pix=[labelmapnew(i,j),labelmapnew(i,j+1),labelmapnew(i,j+2),...
+                    labelmapnew(i+1,j),labelmapnew(i+1,j+2),labelmapnew(i+2,j),...
+                    labelmapnew(i+2,j+1),labelmapnew(i+2,j+2)];
+                for p=1:7
+                    for q=1:7-p
+                        if neighbor_8pix(1,q) > neighbor_8pix(1,q+1)
+                            
+                            temp=neighbor_8pix(1,q);
+                            neighbor_8pix(1,q)=neighbor_8pix(1,q+1);
+                            neighbor_8pix(1,q+1)=temp;
+                            
+                        end
+                    end
+                end
+                k=1;
+                while neighbor_8pix(1,k)==0
+                    if k==8
+                        break
+                    end
+                    k=k+1;
+                end
+                
+                minimum=neighbor_8pix(1,k);
+               
+                %minima=min(neighbor_8(neighbor_8>0)); 
+                if minimum < labelmapnew(i+1,j+1) && minimum>0 %%% Deal with 8 neighbors all 0 case properly!!!
+                    labelmapnew(i+1,j+1)=minimum;
+                else
+                    labelmapnew(i+1,j+1)=labelmapnew(i+1,j+1);
+                end
+            end
+        end
+    end
+    
+    logicvalue=LoopStopCriteria(labelmapnew,labelmapold);
+    
+end
+
+labelmapfinal=labelmapnew(2:m+1,2:n+1);
+
+end
+
+function defectcount=countIsolatePoint(img)
+[m,n] = size(img);
+imgpad = hw3zeroPadding(img, 1);
+defectcount = 0;
+for i=1:m
+    for j=1:n
+        if imgpad(i + 1, j + 1) == 1
+            logicvalue=~imgpad(i, j) && ~imgpad(i, j + 1) && ~imgpad(i, j + 2) && ...
+                ~imgpad(i + 1, j) && ~imgpad(i + 1, j + 2) && ...
+                ~imgpad(i + 2, j) && ~imgpad(i + 2, j + 1) && ~imgpad(i + 2, j + 2);
+            if logicvalue
+                defectcount = defectcount + 1;
+            end
+            
+        end
+    end
+    
+end
+
+
+end
+
+function [ISource,JSource]=EGMPointReverseMapping_Unwrap(IDest,JDest)
+[m,n] = size(IDest);
+
+ISource = zeros(m,n);
+JSource = zeros(m,n);
+
+offset_I=floor(m/2)+1;
+offset_J=floor(n/2)+1;
+
+for i=1:m
+    for j=1:n
+        IDest(i,j)=IDest(i,j)*(2/m);
+    end
+end
+
+for i=1:m
+    for j=1:n
+        JDest(i,j)=JDest(i,j)*(2/n);
+    end
+end
+
+for i=1:m
+    for j=1:n
+        ISource(i,j) = IDest(i,j) * sqrt(1 - JDest(i,j)^2 / 2);
+        JSource(i,j) = JDest(i,j) * sqrt(1 - IDest(i,j)^2 / 2);
+    end
+end
+
+for i=1:m
+    for j=1:n
+        ISource(i,j)=ISource(i,j)*(m/2)+offset_I;
+    end
+end
+
+for i=1:m
+    for j=1:n
+        JSource(i,j)=JSource(i,j)*(n/2)+offset_J;
+    end
+end
+
+
+
+
+end
+
+function [ISource,JSource]=EGMwrapPointReverseMapping(IDest,JDest)
+[m,n] = size(IDest);
+
+ISource = zeros(m,n);
+JSource = zeros(m,n);
+
+offset_I=floor(m/2)+1;
+offset_J=floor(n/2)+1;
+
+for i=1:m
+    for j=1:n
+        IDest(i,j)=IDest(i,j)*(2/m);
+    end
+end
+
+for i=1:m
+    for j=1:n
+        JDest(i,j)=JDest(i,j)*(2/n);
+    end
+end
+
+for i=1:m
+    for j=1:n
+        ISource(i,j) = 0.5 * sqrt(2 + IDest(i,j)^2 - JDest(i,j)^2 + 2 * sqrt(2) * IDest(i,j)) - ...
+            0.5 * sqrt(2 + IDest(i,j)^2 - JDest(i,j)^2 - 2 * sqrt(2) * IDest(i,j));
+        JSource(i,j) = 0.5 * sqrt(2 - IDest(i,j)^2 + JDest(i,j)^2 + 2 * sqrt(2) * JDest(i,j)) ...
+            - 0.5 * sqrt(2 - IDest(i,j)^2 + JDest(i,j)^2 - 2 * sqrt(2) * JDest(i,j));
+    end
+end
+
+for i=1:m
+    for j=1:n
+        ISource(i,j)=ISource(i,j)*(m/2)+offset_I;
+    end
+end
+
+for i=1:m
+    for j=1:n
+        JSource(i,j)=JSource(i,j)*(n/2)+offset_J;
+    end
+end
+
+
+
+
+end
+
+function imgout=hw3matrixadd(img1,img2)
+[m,n]=size(img1);
+imgout=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgout(i,j)=img1(i,j)+img2(i,j);
+    end
+end
+
+end
+
+function imgout=hw3matrixmulconstant(img,constant)
+[m,n]=size(img);
+imgout=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgout(i,j)=img(i,j)*constant;
+    end
+end
+
+end
+
+function imgout=hw3matrixsubtract(img1,img2)
+[m,n]=size(img1);
+imgout=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgout(i,j)=img1(i,j)-img2(i,j);
+    end
+end
+
+end
+
+function img=hw3readraw(filename,row,col,dimension)
+  
+  disp(['Retrieving Image' filename '...']);
+  
+  fid=fopen(filename,'rb');
+  
+  if (fid==-1)
+      error('can not open input image file press CTRL-C to exit \n');
+   pause
+  end
+  % Get all the pixels from the image
+	pixel = fread(fid, inf, 'uchar');
+
+	% Close file
+	fclose(fid);
+
+  img=zeros(row,col,dimension);
+  
+  for layer=1:dimension
+     temp=layer;
+      for i=1:row
+          for j=1:col
+              
+              img(i,j,layer)=pixel(temp);
+              temp=temp+dimension;
+          end
+      end
+  end
+  
+  
+end
+
+function gray=hw3RGB2GRAY(img)
+[m,n,d]=size(img);
+r=img(:,:,1);
+g=img(:,:,2);
+b=img(:,:,3);
+gray=zeros(m,n);
+for i=1:m
+    for j=1:n
+        gray(i,j)=0.2989*r(i,j)+0.5870 *g(i,j)+0.1140*b(i,j);
+    end
+end
+
+
+end
+
+function raw = hw3writeraw(img, filename)
+
+disp([' Write raw image to'  filename ' ...']);
+
+% Get file ID
+fid = fopen(filename,'wb');
+[m,n,dimen]=size(img);
+
+imgsize = m*n;
+% To check if the file exists
+if (fid == -1)
+    error('can not open output image filem press CTRL-C to exit \n');
+    pause
+end
+
+pixels = zeros(1,imgsize*dimen);
+
+for layer=1:dimen
+    temp=layer;
+    for i=1:m % n=501
+        for j=1:n %m=332
+            
+            pixels(temp)=img(i,j,layer); % 500*400*3 to
+            temp=temp+dimen;
+        end
+    end
+end
+
+% Write and close file
+raw = fwrite(fid,pixels, 'uchar');
+fclose(fid);
+
+
+end %function
+
+function img_padded=hw3zeroPadding(img,padsize)
+[m,n]=size(img);
+
+img_padded=zeros(m+2*padsize,n+2*padsize);
+for i=1:m
+    for j=1:n
+        img_padded(i+padsize,j+padsize)=img(i,j);
+    end
+end
+
+end
+
+ function imgunwrap=imageunwrapingCircleToSquare(imgwrap)
+[m,n,d]=size(imgwrap);
+R=imgwrap(:,:,1);
+G=imgwrap(:,:,2);
+B=imgwrap(:,:,3);
+%%% Red PART
+[IDestR,JDestR]=imgToCordinate(R);
+
+[ISourceR,JSourceR]=EGMPointReverseMapping_Unwrap(IDestR,JDestR);
+newR=projectToSquare(R,ISourceR,JSourceR);
+
+%%% Green PART
+[IDestG,JDestG]=imgToCordinate(G);
+
+[ISourceG,JSourceG]=EGMPointReverseMapping_Unwrap(IDestG,JDestG);
+newG=projectToSquare(G,ISourceG,JSourceG);
+
+
+%%% Blue PART
+[IDestB,JDestB]=imgToCordinate(B);
+
+[ISourceB,JSourceB]=EGMPointReverseMapping_Unwrap(IDestB,JDestB);
+newB=projectToSquare(B,ISourceB,JSourceB);
+
+imgunwrap = zeros(m,n,d);
+imgunwrap(:, :, 1) = newR;
+imgunwrap(:, :, 2) = newG;
+imgunwrap(:, :, 3) = newB;
+
+end
+           
+            
+ function imgwrapped=imagewarpingSquareToCircle(imgori)
+[m,n,d]=size(imgori);
+R=imgori(:,:,1);
+G=imgori(:,:,2);
+B=imgori(:,:,3);
+%%% Red PART
+[IDestR,JDestR]=imgToCordinate(R);
+
+[ISourceR,JSourceR]=EGMwrapPointReverseMapping(IDestR,JDestR);
+newR=projectToCircle(R,ISourceR,JSourceR);
+
+%%% Green PART
+[IDestG,JDestG]=imgToCordinate(G);
+
+[ISourceG,JSourceG]=EGMwrapPointReverseMapping(IDestG,JDestG);
+newG=projectToCircle(G,ISourceG,JSourceG);
+
+
+%%% Blue PART
+[IDestB,JDestB]=imgToCordinate(B);
+
+[ISourceB,JSourceB]=EGMwrapPointReverseMapping(IDestB,JDestB);
+newB=projectToCircle(B,ISourceB,JSourceB);
+
+imgwrapped = zeros(m,n,d);
+imgwrapped(:, :, 1) = newR;
+imgwrapped(:, :, 2) = newG;
+imgwrapped(:, :, 3) = newB;
+
+
+
+end
+
+function [I,J]=imgToCordinate(img)
+[m,n]=size(img);
+offset_I=floor(m/2)+1;
+offset_J=floor(n/2)+1;
+I=zeros(1,m);
+J=zeros(1,n);
+
+for i=1:m
+    for j=1:n
+        I(i,j)=i-offset_I;
+        J(i,j)=j-offset_J;
+    end
+end
+
+
+end
+
+function [wrapped_img, concat, mid_left_locator_I, mid_left_locator_J, location_matrix] = left_matrix_warp_concatination(ori_side, H_side_to_middle, ori_middle, locator_in_left_mid, locator_in_mid_left) % positive; negative
+%%% left
+% left 2 gray
+ori_side_gray = rgb2gray(ori_side);
+ori_side_R = ori_side(:,:,1);
+ori_side_G = ori_side(:,:,2);
+ori_side_B = ori_side(:,:,3);
+
+[I_projected_max,J_projected_max,I_min_projected,J_min_projected,m_ori_side,n_ori_side]=calOutputSideSize(ori_side_gray,H_side_to_middle);
+
+[wrapped_img_R,~]=probelm2imgWarpingBackwardMapping(ori_side_R,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side);
+[wrapped_img_G,~]=probelm2imgWarpingBackwardMapping(ori_side_G,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side);
+[wrapped_img_B,obj_location_projected]=probelm2imgWarpingBackwardMapping(ori_side_B,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side);
+
+wrapped_img(:, :, 1) = wrapped_img_R;
+wrapped_img(:, :, 2) = wrapped_img_G;
+wrapped_img(:, :, 3) = wrapped_img_B;
+
+% left mid
+[~,~,concat_R,~]=wrapped_left_middle_cat...
+    (ori_middle,wrapped_img_R,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_left_mid,locator_in_mid_left,obj_location_projected,n_ori_side);
+
+[~,~,concat_G,~]=wrapped_left_middle_cat...
+    (ori_middle,wrapped_img_G,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_left_mid,locator_in_mid_left,obj_location_projected,n_ori_side);
+
+[mid_left_locator_I,mid_left_locator_J,concat_B,location_matrix]=wrapped_left_middle_cat...
+    (ori_middle,wrapped_img_B,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_left_mid,locator_in_mid_left,obj_location_projected,n_ori_side);
+
+    concat(:, :, 1) = concat_R;
+    concat(:, :, 2) = concat_G;
+    concat(:, :, 3) = concat_B;
+end
+
+function logicvalue=LoopStopCriteria(img1,img2)
+[m,n]=size(img1);
+imgdiff=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgdiff(i,j)=abs(img1(i,j)-img2(i,j));
+    end
+end
+
+logicvalue=0;
+
+for i=1:m
+    for j=1:n
+        logicvalue=logicvalue+imgdiff(i,j);
+    end
+end
+
+
+
+end
+
+function logicvalue=matrixCompare(img1,img2)
+[m,n]=size(img1);
+imgdiff=zeros(m,n);
+for i=1:m
+    for j=1:n
+        imgdiff(i,j)=abs(img1(i,j)-img2(i,j));
+    end
+end
+
+diffsum=0;
+
+for i=1:m
+    for j=1:n
+        diffsum=diffsum+imgdiff(i,j);
+    end
+end
+
+if diffsum==0
+    logicvalue=1;
+else
+    logicvalue=0;
+end
+
+
+end
+function [J, I] = oriPixelLocation(n, m)
+
+J = zeros(m, n); %% represent x
+I = zeros(m, n); %% represent y
+for i=1:m
+    for j=1:n
+        I(i,j) = i;
+        J(i,j) = j;
+    end
+end
+
+end
+function imgnew = pixelDelete(img, existanceMap)
+
+[m,n] = size(img);
+imgnew=zeros(m,n);
+for i=1:m
+    for j=1:n
+        
+        if existanceMap(i,j) == 1
+            imgnew(i,j) = 0;
+        else
+            imgnew(i,j)=img(i,j);
+        end
+        
+    end
+end
+
+
+end
+function [wrapped_img,obj_location_projected]=probelm2imgWarpingBackwardMapping(ori_side_img,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side)
+
+wrapped_img=zeros(I_projected_max,J_projected_max);
+[J_wrapped, I_wrapped] = oriPixelLocation(J_projected_max, I_projected_max);
+
+% cal the corresponding (x,y) in ori_left for the new img.
+I_wrapped_to_ori = zeros(I_projected_max, J_projected_max);
+J_wrapped_to_ori = zeros(I_projected_max, J_projected_max);
+obj_location_projected = zeros(I_projected_max, J_projected_max);
+%%% transfer back from objective to original to do calculate value by interpolation
+H_side_to_middle_inv = inv(H_side_to_middle);
+
+for i=1:I_projected_max
+    for j=1:J_projected_max
+        vector = [J_wrapped(i,j) + J_min_projected, I_wrapped(i,j) + I_min_projected, 1]'; 
+        weight = 1 / (H_side_to_middle_inv(3, 1) * vector(1, 1) + H_side_to_middle_inv(3, 2) * vector(2, 1) + H_side_to_middle_inv(3, 3) * vector(3, 1));
+        backprojected_result = weight * vector;
+        backprojected_ori = H_side_to_middle \ backprojected_result;
+        J_wrapped_to_ori(i,j) = backprojected_ori(1,1);
+        I_wrapped_to_ori(i,j) = backprojected_ori(2,1);
+    end
+end
+% put ori back to(1,1)
+I_wrapped_to_ori = hw3matrixadd(I_wrapped_to_ori,ones(I_projected_max, J_projected_max));
+J_wrapped_to_ori = hw3matrixadd(J_wrapped_to_ori,ones(I_projected_max, J_projected_max));
+
+for i=1:I_projected_max
+    for j=1:J_projected_max
+        
+        if (I_wrapped_to_ori(i,j) <= 1 || J_wrapped_to_ori(i,j) <= 1) &&...
+                (I_wrapped_to_ori(i,j) > 0 && J_wrapped_to_ori(i,j) > 0 &&...
+                (floor(I_wrapped_to_ori(i,j))+1) <= m_ori_side && (floor(J_wrapped_to_ori(i,j))+1) <= n_ori_side)
+            wrapped_img(i,j) = ori_side_img(ceil(I_wrapped_to_ori(i,j)), ceil(J_wrapped_to_ori(i,j)));
+            
+
+            obj_location_projected(i,j) = 1;
+%             
+        elseif ((floor(I_wrapped_to_ori(i,j))+1) <= m_ori_side &&...
+                (floor(J_wrapped_to_ori(i,j))+1) <= n_ori_side) &&...
+                (I_wrapped_to_ori(i,j) > 0 && J_wrapped_to_ori(i,j) > 0 &&...
+                I_wrapped_to_ori(i,j) <= m_ori_side && J_wrapped_to_ori(i,j) <= n_ori_side)
+            
+            diff_I = I_wrapped_to_ori(i,j) - fix(I_wrapped_to_ori(i,j));
+            diff_J = J_wrapped_to_ori(i,j) - fix(J_wrapped_to_ori(i,j));
+            
+            wrapped_img(i,j) = (1 - diff_I) * (1 - diff_J) * ori_side_img(fix(I_wrapped_to_ori(i,j)), fix(J_wrapped_to_ori(i,j))) + ...
+                           diff_I * (1 - diff_J) * ori_side_img(fix(I_wrapped_to_ori(i,j)) + 1, fix(J_wrapped_to_ori(i,j))) + ...
+                           (1 - diff_I) * diff_J * ori_side_img(fix(I_wrapped_to_ori(i,j)), fix(J_wrapped_to_ori(i,j)) + 1) + ...
+                           diff_I * diff_J * ori_side_img(fix(I_wrapped_to_ori(i,j)) + 1, fix(J_wrapped_to_ori(i,j)) + 1);
+         
+            obj_location_projected(i,j) = 1;
+
+                       
+        elseif (round(I_wrapped_to_ori(i,j)) <= m_ori_side && round(J_wrapped_to_ori(i,j)) <= n_ori_side) &&...
+                (round(I_wrapped_to_ori(i,j)) > 0 && round(J_wrapped_to_ori(i,j)) > 0) &&...
+                (I_wrapped_to_ori(i,j) > 0 && J_wrapped_to_ori(i,j) > 0)
+            wrapped_img(i,j) = ori_side_img(round(I_wrapped_to_ori(i,j)), round(J_wrapped_to_ori(i,j)));
+            
+            obj_location_projected(i,j) = 1;
+            
+        else
+            wrapped_img(i,j) = 0;
+            
+        end
+        
+        
+    end
+end
+
+
+end
+
+function imgcircle=projectToCircle(img,ISource,JSource)
+[m,n] = size(img);
+imgcircle = zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        
+        if floor(ISource(i,j)) + 1 <= m && floor(JSource(i,j)) + 1 <= n && floor(ISource(i,j)) >= 1 && floor(JSource(i,j)) >= 1
+            delta_I = ISource(i,j) - floor(ISource(i,j));
+            delta_J = JSource(i,j) - floor(JSource(i,j));
+            imgcircle(i,j) = (1 - delta_I) * (1 - delta_J) * img(floor(ISource(i,j)), floor(JSource(i,j))) + ...
+                           delta_I * (1 - delta_J) * img(floor(ISource(i,j)) + 1, floor(JSource(i,j))) + ...
+                           (1 - delta_I) * delta_J * img(floor(ISource(i,j)), floor(JSource(i,j)) + 1) + ...
+                           delta_I * delta_J * img(floor(ISource(i,j)) + 1, floor(JSource(i,j)) + 1);
+                       
+        elseif round(ISource(i,j)) <= m && round(JSource(i,j)) <= n && round(ISource(i,j)) >= 1 && round(JSource(i,j)) >= 1
+            imgcircle(i,j) = img(round(ISource(i,j)), round(JSource(i,j)));
+        else
+            imgcircle(i,j) = 0;
+        end
+    end
+end
+
+end
+
+function imgsquare=projectToSquare(img,ISource,JSource)
+[m,n] = size(img);
+imgsquare = zeros(m,n);
+radius=floor(m/2);
+for i=1:m
+    for j=1:n
+        
+        if (ISource(i,j)-radius)^2 + (JSource(i,j)-radius)^2 <= radius^2
+            
+            delta_I = ISource(i,j) - floor(ISource(i,j));
+            delta_J = JSource(i,j) - floor(JSource(i,j));
+            imgsquare(i,j) = (1 - delta_I) * (1 - delta_J) * img(floor(ISource(i,j)), floor(JSource(i,j))) + ...
+                delta_I * (1 - delta_J) * img(floor(ISource(i,j)) + 1, floor(JSource(i,j))) + ...
+                (1 - delta_I) * delta_J * img(floor(ISource(i,j)), floor(JSource(i,j)) + 1) + ...
+                delta_I * delta_J * img(floor(ISource(i,j)) + 1, floor(JSource(i,j)) + 1);
+        else
+            if ISource(i,j)> floor(m/2) && JSource(i,j)> floor(n/2)
+                imgsquare(i,j) = img(floor(ISource(i,j)), floor(JSource(i,j)));
+                
+            elseif ISource(i,j)> floor(m/2) && JSource(i,j)< floor(n/2)
+                imgsquare(i,j) = img(floor(ISource(i,j)), ceil(JSource(i,j)));
+                
+            elseif ISource(i,j)< floor(m/2) && JSource(i,j)> floor(n/2)
+                imgsquare(i,j) = img(ceil(ISource(i,j)), floor(JSource(i,j)));
+              
+            else
+                imgsquare(i,j) = img(ceil(ISource(i,j)), ceil(JSource(i,j)));
+            end
+            
+        end
+        
+        
+        
+    end
+end
+
+
+end
+
+function imgPadded=ReflecPadding(img,n)  %n is what you want to padd
+
+[row,col]=size(img); 
+imgPadded=zeros(row+2*n,col+2*n);
+imgPadded(n+1:row+n,n+1:col+n)=img;
+
+for i=1:n
+imgPadded(n+1-i,n+1:col+n)=imgPadded(n+1+i,n+1:col+n);        % pad above
+imgPadded(row+n+i,n+1:col+n)=imgPadded(row+n-i,n+1:col+n);    % pad below
+end
+
+for i=1:n
+imgPadded(1:row+2*n,n+1-i)=imgPadded(1:row+2*n,n+1+i);        % pad left
+imgPadded(1:row+2*n,col+n+i)=imgPadded(1:row+2*n,col+n-i);    % pad right bug here!!!!!
+end
+
+end
+
+function [wrapped_img, concat, middle_right_locator, middle_left_locator, location_matrix] = right_matrix_warp_concatination(ori_side, H_side_to_middle, ori_middle, locator_in_right_mid, locator_in_mid_right) % positive; negative
+
+%%% left
+% left 2 gray
+ori_side_gray = rgb2gray(ori_side);
+ori_side_R = ori_side(:,:,1);
+ori_side_G = ori_side(:,:,2);
+ori_side_B = ori_side(:,:,3);
+
+[I_projected_max,J_projected_max,I_min_projected,J_min_projected,m_ori_side,n_ori_side]=calOutputSideSize(ori_side_gray,H_side_to_middle);
+
+[wrapped_img_R,~]=probelm2imgWarpingBackwardMapping(ori_side_R,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side);
+[wrapped_img_G,~]=probelm2imgWarpingBackwardMapping(ori_side_G,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side);
+[wrapped_img_B,obj_location_projected]=probelm2imgWarpingBackwardMapping(ori_side_B,I_projected_max,J_projected_max,H_side_to_middle,I_min_projected,J_min_projected,m_ori_side,n_ori_side);
+
+wrapped_img(:, :, 1) = wrapped_img_R;
+wrapped_img(:, :, 2) = wrapped_img_G;
+wrapped_img(:, :, 3) = wrapped_img_B;
+
+% left mid
+[~,~,concat_R,~]=wrapped_right_middle_cat...
+    (ori_middle,wrapped_img_R,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_right_mid,locator_in_mid_right,obj_location_projected);
+
+[~,~,concat_G,~]=wrapped_right_middle_cat...
+    (ori_middle,wrapped_img_G,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_right_mid,locator_in_mid_right,obj_location_projected);
+
+[middle_right_locator,middle_left_locator,concat_B,location_matrix]=wrapped_right_middle_cat...
+    (ori_middle,wrapped_img_B,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_right_mid,locator_in_mid_right,obj_location_projected);
+
+    concat(:, :, 1) = concat_R;
+    concat(:, :, 2) = concat_G;
+    concat(:, :, 3) = concat_B;
+end
+
+function stage1result_K = stage1Filter_K(bond, img_ori)
+[m,n] = size(bond);
+imgpad=hw3zeroPadding(img_ori,1);
+stage1result_K = zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        neighborInfo=[imgpad(i,j),imgpad(i,j+1),imgpad(i,j+2),imgpad(i+1,j),imgpad(i+1,j+2),...
+            imgpad(i+2,j),imgpad(i+2,j+1),imgpad(i+2,j+2)];
+        switch bond(i,j)
+            case 4 % 4
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[0,1,0,0,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,1,0,1,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,0,0,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,1,0,1,0]) || ...
+                      ... % 5
+                      matrixCompare(neighborInfo,[0,0,1,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,0,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,0,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,0,1,1,1]);
+            case 6 % 9
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,0,1,0,1,1]);
+            case 7 % 10
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,0,1,1,1,1]);
+            case 8 % 11
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[0,1,1,0,1,0,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,1,1,1,1]);
+            case 9 % 12
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,0,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,1,1,1,1,1]);
+            case 10 % 13
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,1,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,0,1,1,1,1,1,1]);
+            case 11 % 14
+                stage1result_K(i,j) = matrixCompare(neighborInfo,[1,1,1,1,1,0,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,1,1,1,1,1]);
+            otherwise
+                stage1result_K(i,j) = 0;
+        end
+    end
+end
+end
+
+function stage1result_S = stage1Filter_S(bond, img_ori)
+[m,n] = size(bond);
+imgpad=hw3zeroPadding(img_ori,1);
+stage1result_S = zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        neighborInfo=[imgpad(i,j),imgpad(i,j+1),imgpad(i,j+2),imgpad(i+1,j),imgpad(i+1,j+2),...
+            imgpad(i+2,j),imgpad(i+2,j+1),imgpad(i+2,j+2)];
+        switch bond(i,j)
+            case 1 % 1
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[0,0,1,0,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,0,0,0,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,0,1,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,0,0,0,1]);
+            case 2 % 2
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[0,0,0,0,1,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,1,0,0,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,1,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,0,0,1,0]);
+            case 3 % 3
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[0,0,1,0,1,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,1,1,0,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,1,0,0,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,0,0,1,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,1,0,1,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,0,1,1,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,0,0,1,1]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,1,0,0,1]);
+            case 4 % 5
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[0,0,1,0,1,0,0,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,0,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,0,0,1,0,1,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,0,1,1,1]);
+            case 5 % 6
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[1,1,0,0,1,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,1,0,0,1,0,0,1]) || ...
+                    matrixCompare(neighborInfo,[0,1,1,1,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,1,0,1,0,1,0]) || ...& 7
+                    matrixCompare(neighborInfo,[0,1,1,0,1,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,1,0,1,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,1,0,1,1,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,1,0,1,1]);
+            case 6 % 8
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[1,1,0,0,1,0,0,1]) || ...
+                    matrixCompare(neighborInfo,[0,1,1,1,0,1,0,0]) || ...% 9
+                    matrixCompare(neighborInfo,[1,1,1,0,1,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[0,1,1,0,1,0,0,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,0,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,1,0,1,0,1,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,0,0,1,0,1,1,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,1,0,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,0,1,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[0,0,1,0,1,0,1,1]);
+            case 7 % 10
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,0,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,0,1,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,0,0,1,0,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[0,0,1,0,1,1,1,1]);
+            case 8 % 11
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[0,1,1,0,1,0,1,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,1,0,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,1,0,1,0,1,1,0]) || ...
+                    matrixCompare(neighborInfo,[0,0,0,1,1,1,1,1]);
+            case 9 % 12
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,1,1]) || ...
+                    matrixCompare(neighborInfo,[0,1,1,0,1,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,1,1,0,0]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,1,0,0,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,0,1,1,0]) || ...
+                    matrixCompare(neighborInfo,[1,1,0,1,0,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[1,0,0,1,1,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[0,0,1,1,1,1,1,1]);
+            case 10 % 13
+                stage1result_S(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,1,1,0,1]) || ...
+                    matrixCompare(neighborInfo,[1,1,1,1,0,1,1,1]) || ...
+                    matrixCompare(neighborInfo,[1,0,1,1,1,1,1,1]);
+            otherwise
+                stage1result_S(i,j) = 0;
+        end
+    end
+end
+
+
+
+
+end
+
+function stage1result_T = stage1Filter_T(bond, img_ori)
+[m,n] = size(bond);
+imgpad=hw3zeroPadding(img_ori,1);
+stage1result_T = zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        neighborInfo=[imgpad(i,j),imgpad(i,j+1),imgpad(i,j+2),imgpad(i+1,j),imgpad(i+1,j+2),...
+            imgpad(i+2,j),imgpad(i+2,j+1),imgpad(i+2,j+2)];
+        switch bond(i,j)
+            case 4 % 4
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[0,1,0,0,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,1,0,1,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,0,0,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,1,0,1,0]) || ...
+                      ... % 5
+                      matrixCompare(neighborInfo,[0,0,1,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,0,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,0,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,0,1,1,1]);
+            case 5 % 6
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[1,1,0,0,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,1,0,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,1,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,0,1,0,1,0]) || ...
+                      ... % 7
+                      matrixCompare(neighborInfo,[0,1,1,0,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,1,0,1,1]);
+            case 6 % 8
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[1,1,0,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,1,0,1,0,0]) || ...
+                      ... % 9
+                      matrixCompare(neighborInfo,[1,1,1,0,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,0,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,0,1,0,1,1]);
+            case 7 % 10
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,0,1,1,1,1]);
+            case 8 % 11
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[0,1,1,0,1,0,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,0,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[0,0,0,1,1,1,1,1]);
+            case 9 % 12
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,0,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,1,1,0,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,1,0,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,0,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,1,1,0]) || ...
+                      matrixCompare(neighborInfo,[1,1,0,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,0,0,1,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[0,0,1,1,1,1,1,1]);
+            case 10 % 13
+                stage1result_T(i,j) = matrixCompare(neighborInfo,[1,1,1,0,1,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,1,1,0,1]) || ...
+                      matrixCompare(neighborInfo,[1,1,1,1,0,1,1,1]) || ...
+                      matrixCompare(neighborInfo,[1,0,1,1,1,1,1,1]);
+            otherwise
+                stage1result_T(i,j) = 0;
+        end
+    end
+end
+end
+function existanceMap = stage2Filter_K(stage1result)
+[m,n] = size(stage1result);
+existanceMap = zeros(m,n);
+stage1resultPad = hw3zeroPadding(stage1result, 1);
+for i=1:m
+    for j=1:n
+        if stage1resultPad(i + 1,j + 1) == 1
+            
+            % spur
+            spur1 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j ) && ~stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+            spur2 = ~stage1resultPad(i ,j ) && ~stage1resultPad(i ,j + 1) && ~stage1resultPad(i ,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            spur3 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && stage1resultPad(i ,j + 2) && ...
+                ~stage1resultPad(i + 1, j ) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            spur4 = stage1resultPad(i ,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % Single 4-connection
+            Single4C1 = ~stage1resultPad(i ,j ) && ~stage1resultPad(i ,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            Single4C2 = ~stage1resultPad(i ,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            Single4C3 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            Single4C4 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % L Corner
+            LCorner1 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            LCorner2 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            LCorner3 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            LCorner4 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % Corner Cluster
+            CornerCluster1 = stage1resultPad(i ,j) && stage1resultPad(i,j + 1) && ...
+                stage1resultPad(i + 1,j);
+            CornerCluster2 = stage1resultPad(i + 1,j + 2) && ...
+                stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+            % Tee Branch
+            TeeBranch1 = stage1resultPad(i,j + 1) && ...
+                stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2);
+            TeeBranch2 = stage1resultPad(i,j + 1) && ...
+                stage1resultPad(i + 1, j) && ...
+                stage1resultPad(i + 2,j + 1);
+            TeeBranch3 = stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                stage1resultPad(i + 2,j + 1);
+            TeeBranch4 = stage1resultPad(i ,j + 1) && ...
+                stage1resultPad(i + 1, j + 2) && ...
+                stage1resultPad(i + 2,j + 1);
+            % Vee Branch
+            VeeBranch1 = stage1resultPad(i ,j) && stage1resultPad(i,j + 2) && ...
+                (stage1resultPad(i + 2,j) || stage1resultPad(i + 2,j + 1) || stage1resultPad(i + 2,j + 2));
+            VeeBranch2 = stage1resultPad(i ,j) && ...
+                stage1resultPad(i + 2,j) && ...
+                (stage1resultPad(i ,j + 2) || stage1resultPad(i + 1,j + 2) || stage1resultPad(i + 2,j + 2));
+            VeeBranch3 = stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 2) && ...
+                (stage1resultPad(i ,j ) || stage1resultPad(i ,j + 1) || stage1resultPad(i ,j + 2));
+            VeeBranch4 = stage1resultPad(i ,j + 2) && ...
+                stage1resultPad(i + 2,j + 2) && ...
+                (stage1resultPad(i ,j) || stage1resultPad(i + 1, j) || stage1resultPad(i + 2,j));
+            % Diagonal Branch
+            DiagonalBranch1 = stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1);
+            DiagonalBranch2 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ...
+                stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+            DiagonalBranch3 = ~stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1);
+            DiagonalBranch4 = stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ...
+                ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            
+            existanceMap(i,j) = ~(spur1 || spur2 || spur3 || spur4 || Single4C1 || Single4C2 || Single4C3 || Single4C4 || LCorner1 || LCorner2 || LCorner3 || LCorner4 || ...
+                CornerCluster1 || CornerCluster2 || TeeBranch1 || TeeBranch2 || TeeBranch3 || TeeBranch4 || VeeBranch1 || VeeBranch2 || VeeBranch3 || VeeBranch4 || DiagonalBranch1 || DiagonalBranch2 || DiagonalBranch3 || DiagonalBranch4);
+        end
+    end
+end
+
+end
+function existanceMap = stage2Filter_ST(stage1result)
+[m,n] = size(stage1result);
+existanceMap = zeros(m,n);
+stage1resultPad = hw3zeroPadding(stage1result, 1);
+for i=1:m
+    for j=1:n
+        if stage1resultPad(i + 1,j + 1) == 1
+            
+            % spur
+            spur1 = ~stage1resultPad(i ,j) && ~stage1resultPad(i,j + 1) && stage1resultPad(i,j+2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            spur2 = stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % Single 4-connection
+            single4c1 = ~stage1resultPad(i ,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            single4c2 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % L Cluster
+            LCluster11 = ~stage1resultPad(i ,j) && ~stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            LCluster12 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            LCluster13 = stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            LCluster14 = stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j ) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            LCluster21 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            LCluster22 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            LCluster23 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+             
+            LCluster24 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+            % 4-connected Offset
+            COffset1 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            COffset2 = stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            COffset3 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+             
+            COffset4 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % Spur corner Cluster
+            SpurcornerCluster1 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j ) && ...
+                 stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2) && ...
+                 (stage1resultPad(i,j + 1) || stage1resultPad(i + 1,j + 2));
+             
+            SpurcornerCluster2 = stage1resultPad(i,j) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2) && ...
+                 (stage1resultPad(i + 1, j) || stage1resultPad(i,j + 1));
+             
+            SpurcornerCluster3 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j + 2) && ...
+                 stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 2) && ...
+                 (stage1resultPad(i + 1,j) || stage1resultPad(i + 2,j + 1));
+             
+            SpurcornerCluster4 = stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1,j) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 2) && ...
+                 (stage1resultPad(i + 1, j + 2) || stage1resultPad(i + 2,j + 1));
+             % Corner Cluster
+             CornerCluster1 = stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ...
+                 stage1resultPad(i + 1,j);
+             CornerCluster2 = stage1resultPad(i+1,j+2) && stage1resultPad(i+2,j + 1) && ...
+                 stage1resultPad(i + 2,j+2);
+             % Tee Branch
+             TeeBranch11 = stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+             TeeBranch12 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ...
+                 stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && ~stage1resultPad(i + 2,j + 1);
+             
+            TeeBranch13 = ~stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ...
+                 stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1);
+             
+            TeeBranch14 = ~stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            TeeBranch21 = stage1resultPad(i,j + 1) && ...
+                 stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+             
+            TeeBranch22 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j + 1);
+             
+            TeeBranch23 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j + 1);
+             
+            TeeBranch24 = stage1resultPad(i,j + 1) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+            % Vee Branch
+            VeeBranch1 = stage1resultPad(i,j) && stage1resultPad(i,j + 2) && ...
+                 (stage1resultPad(i + 2,j) || stage1resultPad(i + 2,j + 1) || stage1resultPad(i + 2,j + 2));
+             
+            VeeBranch2 = stage1resultPad(i,j) && ...
+                 stage1resultPad(i + 2,j) && ...
+                 (stage1resultPad(i,j + 2) || stage1resultPad(i + 1,j + 2) || stage1resultPad(i + 2,j + 2));
+             
+            VeeBranch3 = stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 2) && ...
+                 (stage1resultPad(i,j) || stage1resultPad(i,j + 1) || stage1resultPad(i,j + 2));
+             
+            VeeBranch4 = stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 2,j + 2) && ...
+                 (stage1resultPad(i,j) || stage1resultPad(i + 1, j) || stage1resultPad(i + 2,j));
+            % Diagonal Branch
+            DiagonalBranch1 = stage1resultPad(i,j + 1) && ~stage1resultPad(i,j + 2) && ...
+                 ~stage1resultPad(i + 1, j ) && stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j ) && ~stage1resultPad(i + 2,j + 1);
+             
+            DiagonalBranch2 = ~stage1resultPad(i,j) && stage1resultPad(i,j + 1) && ...
+                 stage1resultPad(i + 1, j) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j + 1) && stage1resultPad(i + 2,j + 2);
+             
+            DiagonalBranch3 = ~stage1resultPad(i,j + 1) && stage1resultPad(i,j + 2) && ...
+                 stage1resultPad(i + 1, j ) && ~stage1resultPad(i + 1,j + 2) && ...
+                 ~stage1resultPad(i + 2,j) && stage1resultPad(i + 2,j + 1);
+             
+            DiagonalBranch4 = stage1resultPad(i,j) && ~stage1resultPad(i,j + 1) && ...
+                 ~stage1resultPad(i + 1, j) && stage1resultPad(i + 1,j + 2) && ...
+                 stage1resultPad(i + 2,j + 1) && ~stage1resultPad(i + 2,j + 2);
+
+            existanceMap(i,j) = ~(spur1 || spur2 || single4c1 || single4c2 || LCluster11 || LCluster12 || LCluster13 || LCluster14 || LCluster21 || LCluster22 || LCluster23 || LCluster24 || ...
+                COffset1 || COffset2 || COffset3 || COffset4 || SpurcornerCluster1 || SpurcornerCluster2 || SpurcornerCluster3 || SpurcornerCluster4 || CornerCluster1 || CornerCluster2 || TeeBranch11 || TeeBranch12 || TeeBranch13 || TeeBranch14 || TeeBranch21 || TeeBranch22 || ...
+                TeeBranch23 || TeeBranch24 || VeeBranch1 || VeeBranch2 || VeeBranch3 || VeeBranch4 || DiagonalBranch1 || DiagonalBranch2 || DiagonalBranch3 || DiagonalBranch4);
+        end
+    end
+end
+
+
+end
+function img_bin=thresholdToBinary(img,thresh)
+[m,n]=size(img);
+img_bin=zeros(m,n);
+for i=1:m
+    for j=1:n
+        if img(i,j)>thresh
+            img_bin(i,j)=1;
+        else
+            img_bin(i,j)=0;
+        end
+    end
+end
+
+
+end
+function [middle_ul_I,mid_ul_J,new_img_layer,location_matrix]=wrapped_left_middle_cat(ori_middle,wrapped_img_layer,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,locator_in_left_mid,locator_in_mid_left,obj_location_projected,n_ori_side)
+
+[m_middle, n_middle,~] = size(ori_middle);
+fea_vector = [locator_in_left_mid, 1]';  
+transformed_fea_vector = H_side_to_middle * fea_vector;
+center_left_J = transformed_fea_vector(1,1) / transformed_fea_vector(3,1);
+center_left_I = transformed_fea_vector(2,1) / transformed_fea_vector(3,1);
+
+center_left_I = center_left_I - I_min_projected;
+center_left_J = center_left_J - J_min_projected;
+
+
+loc_I = center_left_I - locator_in_mid_left(1, 2); 
+loc_J = center_left_J - locator_in_mid_left(1, 1) + n_ori_side;
+
+
+new_img_layer = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , max(J_projected_max, n_middle + fix(loc_J) - 1));
+new_left_layer = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , max(J_projected_max, n_middle + fix(loc_J) - 1));
+new_right_layer = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , max(J_projected_max, n_middle + fix(loc_J) - 1));
+
+new_left_layer(1:I_projected_max, 1:J_projected_max) = wrapped_img_layer;
+
+location_matrix = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , max(J_projected_max, n_middle + fix(loc_J) - 1));
+
+new_right_layer(fix(loc_I): m_middle + fix(loc_I) - 1,...
+    fix(loc_J): n_middle + fix(loc_J) - 1) = ori_middle(:,:,1);
+
+new_left_res = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , max(J_projected_max, n_middle + fix(loc_J) - 1));
+new_left_res(1:I_projected_max, 1:J_projected_max) = obj_location_projected;
+new_mid_rep = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , max(J_projected_max, n_middle + fix(loc_J) - 1));
+new_mid_rep(fix(loc_I): m_middle + fix(loc_I) - 1,...
+    fix(loc_J): n_middle + fix(loc_J) - 1) = 1;
+
+[m_new, n_new] = size(new_img_layer);
+
+
+for i=1:m_new
+    for j=1:n_new
+        if new_left_res(i,j) == 1 && new_mid_rep(i,j) == 1
+            new_img_layer(i,j) = (1/2) * (new_left_layer(i,j) + new_right_layer(i,j,1));
+            
+            location_matrix(i,j) = 1;
+        else
+            if new_left_res(i,j) == 1
+                new_img_layer(i,j) = new_left_layer(i,j);
+                
+                location_matrix(i,j) = 1;
+                
+            end
+            if new_mid_rep(i,j) == 1
+                new_img_layer(i,j) = new_right_layer(i,j,1);
+                
+                location_matrix(i,j) = 1;
+            end
+            
+        end
+        
+    end
+end
+
+
+middle_ul_I = fix(loc_I);
+mid_ul_J = fix(loc_J);
+
+
+
+
+end
+
+function [middle_ul_I,middle_ul_J,new_img_layer,location_matrix]=wrapped_right_middle_cat(ori_middle,wrapped_img_layer,H_side_to_middle,I_projected_max,J_projected_max,I_min_projected,J_min_projected,location_in_right_mid,location_in_mid_right,obj_location_projected)
+[m_middle, n_middle,~] = size(ori_middle);
+    point_fea = [location_in_right_mid, 1]';  
+    transformed_fea_vector = H_side_to_middle * point_fea;
+    center_left_J = transformed_fea_vector(1,1) / transformed_fea_vector(3,1);
+    center_left_I = transformed_fea_vector(2,1) / transformed_fea_vector(3,1);
+
+    center_left_I = center_left_I - I_min_projected;
+    center_left_J = center_left_J - J_min_projected;
+
+
+    
+    loc_I = center_left_I - location_in_mid_right(1, 2);
+    loc_J = n_middle - (center_left_J - location_in_mid_right(1, 1));
+  
+    new_img_layer = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , J_projected_max + fix(loc_J));
+    new_left_layer = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , J_projected_max + fix(loc_J));
+    new_right_layer = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , J_projected_max + fix(loc_J));
+    
+    new_left_layer(fix(loc_I): m_middle + fix(loc_I) - 1, 1: n_middle) = ori_middle(:,:,1);
+    
+    
+    location_matrix = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , J_projected_max + fix(loc_J));
+
+    new_right_layer(1: I_projected_max, fix(loc_J): J_projected_max + fix(loc_J) - 1) = wrapped_img_layer;
+    
+    new_left_res = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , J_projected_max + fix(loc_J));
+    new_left_res(fix(loc_I): m_middle + fix(loc_I) - 1, 1: n_middle) = 1;
+    new_mid_rep = zeros(max(I_projected_max, m_middle + fix(loc_I) - 1) , J_projected_max + fix(loc_J));
+    new_mid_rep(1: I_projected_max, fix(loc_J): J_projected_max + fix(loc_J) - 1) = obj_location_projected;
+    [m_new, n_new] = size(new_img_layer);
+    for i=1:m_new
+        for j=1:n_new
+            if new_left_res(i,j) == 1 && new_mid_rep(i,j) == 1
+                new_img_layer(i,j) = (1/2) * (new_left_layer(i,j) + new_right_layer(i,j,1));
+                
+                location_matrix(i,j) = 1;
+
+            else
+                if new_left_res(i,j) == 1
+                    new_img_layer(i,j) = new_left_layer(i,j);
+                    
+                    location_matrix(i,j) = 1;
+                end
+                if new_mid_rep(i,j) == 1
+                    new_img_layer(i,j) = new_right_layer(i,j,1);
+                   
+                    location_matrix(i,j) = 1;
+                end
+            end
+        end
+    end
+   middle_ul_I = fix(loc_I);
+    middle_ul_J = 1;
+    
+end         

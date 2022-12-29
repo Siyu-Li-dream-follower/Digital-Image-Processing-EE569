@@ -1,0 +1,1343 @@
+%EE569 HOMEWORK ASSIGNMENT 1
+%DATE: Feb 7th 2021
+%NAME: Siyu Li
+%ID:2455870216
+%E-mail:lisiyu@usc.edu
+%In this homework I wrote all the functions myself so there will not be any open source code in problem2 NL Means related parts.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%Problem 1 main function
+
+% Before running the code. Open all problem##.m such as problem21.m files first to change the root of the raw file in order to read raw file successfully and write them into
+% proper position. (In function ModifiedReadraw and universalwriteraw) !!!
+
+disp('problem 1-1, enter to continue')
+pause
+problem11
+disp('problem 1-2, enter to continue')
+pause
+problem12
+disp('problem 1-3, enter to continue')
+pause
+problem13
+disp('problem 1-4, enter to continue')
+pause
+problem14
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%Problem 2 main function
+
+disp('problem 2-1, enter to continue')
+pause
+problem21
+disp('problem 2-2, enter to continue')
+pause
+problem22
+disp('problem 2-3, enter to continue')
+pause
+problem23
+disp('problem 2-4, enter to continue')
+pause
+problem24
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%Problem 3 main function
+disp('problem 3-1, enter to continue')
+pause
+problem31
+disp('problem 3-2, enter to continue')
+pause
+problem32
+disp('problem 3-3, enter to continue')
+pause
+problem33
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Change all the addresses or roots in ModifiedReadraw and
+%%%% universalwriteraw before running the code!
+%%%% If you want to save jpg result to get some of the image like barplot in my report, you can
+%%%% use saveas(gcf,filename) and change the .raw in filename to .jpg
+function []=problem11()
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\House.raw',580,440,1); % To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+figure(1);
+imshow(pic_uint8);
+
+red=1;
+green=2;
+blue=3;
+
+rebuild(:,:,1)=bilinearDemo(pic,red);  %red
+rebuild(:,:,2)=bilinearDemo(pic,green);  %green
+rebuild(:,:,3)=bilinearDemo(pic,blue);  %blue
+
+figure(2);
+imshow(uint8(rebuild));
+%%% saveas(gcf,name);
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\BilinearDemosaicing.raw'];
+universalwriteraw(rebuild,name);
+
+pic_ori = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\House_ori.raw',580,440,3);
+
+pic_ori_Red = pic_ori(:,:,1);
+pic_ori_Green = pic_ori(:,:,2);
+pic_ori_Blue = pic_ori(:,:,3);
+
+PSNR_R = PSNRCalculate(rebuild(:,:,1), pic_ori_Red);
+disp(['PSNR of red channel ',num2str(PSNR_R)]);
+PSNR_G = PSNRCalculate(rebuild(:,:,2), pic_ori_Green);
+disp(['PSNR of green channel ',num2str(PSNR_G)]);
+PSNR_B = PSNRCalculate(rebuild(:,:,3), pic_ori_Blue);
+disp(['PSNR of blue channel ',num2str(PSNR_B)]);
+PSNR_average = (PSNR_R + PSNR_G + PSNR_B) / 3;
+disp(['PSNR average of the reconstructed image ',num2str(PSNR_average)]);
+
+
+end
+
+function []=problem12()
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\House.raw',580,440,1); % To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+figure(1);
+imshow(pic_uint8);
+
+red=1;
+green=2;
+blue=3;
+
+rebuild(:,:,1)=MHCDemo(pic,red);  %red
+rebuild(:,:,2)=MHCDemo(pic,green);  %green
+rebuild(:,:,3)=MHCDemo(pic,blue);  %blue
+
+rebuild = uint8(rebuild);
+figure(2);
+imshow(rebuild)
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\MHC_Demosaicing.raw'];
+%%%saveas(gcf,name);
+universalwriteraw(rebuild,name);
+
+pic_ori = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\House_ori.raw',580,440,3);
+
+pic_ori_Red = pic_ori(:,:,1);
+pic_ori_Green = pic_ori(:,:,2);
+pic_ori_Blue = pic_ori(:,:,3);
+
+PSNR_R = PSNRCalculate(rebuild(:,:,1), pic_ori_Red);
+disp(['PSNR of red channel ',num2str(PSNR_R)]);
+PSNR_G = PSNRCalculate(rebuild(:,:,2), pic_ori_Green);
+disp(['PSNR of green channel ',num2str(PSNR_G)]);
+PSNR_B = PSNRCalculate(rebuild(:,:,3), pic_ori_Blue);
+disp(['PSNR of blue channel ',num2str(PSNR_B)]);
+PSNR_average = (PSNR_R + PSNR_G + PSNR_B) / 3;
+disp(['PSNR average of the reconstructed image ',num2str(PSNR_average)]);
+
+
+end
+
+function []=problem13()             %Tansfer function based image intensity equalization
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Toy.raw',400,560,1); % To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+figure(1);
+imshow(pic_uint8);
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\OriginalToy.jpg'];
+%%saveas(gcf,name);
+
+
+picpmf=CalHist(pic);
+
+figure(2);
+bar(picpmf);
+xlabel('Pixel Intensity');
+ylabel('Frequency');
+title('Toy Picture Histogram');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\Toy_Picture_Histogram.jpg'];
+%%saveas(gcf,name);
+
+[m,n]=size(pic);
+normalizeTerm=256/(m*n);
+transferfunc=normalizeTerm*cumulativeHistogram(picpmf);
+figure(3);
+plot(transferfunc);
+xlabel('Original Pixels');
+ylabel('Transformed Pixels');
+title('Transfer Function');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem13\Transfer_Function.jpg'];
+%%% saveas(gcf,name);
+
+equalizedImg=intensityTransfer(pic,transferfunc);
+figure(4);
+equalizedImg_uint8=uint8(equalizedImg);
+imshow(equalizedImg_uint8);
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\Equalized_Toy_Image.raw'];
+%%saveas(gcf,name);
+universalwriteraw(equalizedImg,name);
+
+equalizedImgpmf=CalHist(round(equalizedImg)); % transfer function introduce fractional number,here we use round() to make it integral
+figure(5);
+bar(equalizedImgpmf);
+xlabel('Pixel Intensity');
+ylabel('Frequency');
+title('Equalized Picture Histogram');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem13\Equalized_Toy_Image_Histogram.jpg'];
+%%saveas(gcf,name);
+
+figure(6);
+cdfEqualizedpic=cumulativeHistogram(equalizedImgpmf);
+bar(cdfEqualizedpic);
+xlabel('Pixel Intensity');
+ylabel('Cumulative Frequency');
+title('Equalized Picture Cumulative Histogram');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem13\EqualizedPicCumulHist1.jpg'];
+%%saveas(gcf,name);
+
+end
+
+function []=problem14()             %Tansfer function based image intensity equalization
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Toy.raw',400,560,1); % To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+figure(1);
+imshow(pic_uint8);
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem14\Original_Toy_Image.jpg'];
+%%saveas(gcf,name);
+
+figure(2);
+equalizedpic=rearrange(pic);
+imshow(uint8(equalizedpic));
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\CulmuProbBasedEqualizedPic.raw'];
+%%saveas(gcf,name);
+universalwriteraw(equalizedpic,name);
+
+figure(3);
+pmfEqualizedpic=CalHist(equalizedpic);
+bar(pmfEqualizedpic);
+xlabel('Pixel Intensity');
+ylabel('Frequency');
+title('Equalized Picture Histogram');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem14\EqualizedPicHist.jpg'];
+%%saveas(gcf,name);
+
+figure(4);
+cdfEqualizedpic=cumulativeHistogram(pmfEqualizedpic);
+bar(cdfEqualizedpic);
+xlabel('Pixel Intensity');
+ylabel('Cumulative Frequency');
+title('Equalized Picture Cumulative Histogram');
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem14\EqualizedPicCumulHist.jpg'];
+%%saveas(gcf,name);
+
+end
+
+function []=problem21()             %Tansfer function based image intensity equalization
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_gray.raw',500,400,1);
+pic_noisy = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_gray_noisy.raw',500,400,1);% To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+pic_uint8_noisy = uint8(pic_noisy);
+figure(1);
+imshow(pic_uint8);
+figure(2);
+imshow(pic_uint8_noisy);
+
+noisegraph=matrixsubtract(pic,pic_noisy);
+[noisehist,maxnoise,minnoise]=noiseHistogram(noisegraph);
+% figure(3);
+% imshow(noisegraph);
+figure(3);
+x_axis = minnoise:maxnoise;
+bar(x_axis, noisehist);
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem21\noiseDistribution.jpg'];
+%%saveas(gcf,name); 
+
+noiseavg=noiseaverage(noisegraph);
+noise_var=noisevariance(noisegraph);
+noise_std = sqrt(noise_var); % As calculated,noise standard deviation is 9.9474.
+disp(['noise mean ',num2str(noiseavg)]);
+disp(['standard deviation of the noise  ',num2str(noise_std)]);
+count=4;
+
+for i=[1,2,3,4]     % filter radius
+    
+    filterimg=filterUnifWeight(pic_noisy,i);
+    psnr=PSNRCalculate(filterimg, pic);
+    
+    figure(i);
+    filterimg_uint8 = uint8(filterimg);
+    imshow(filterimg_uint8);
+    title(['r: ',num2str(i),'  PSNR: ',num2str(psnr)]);
+    
+    name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\UnifWeight_R=' num2str(i) '.raw'];
+    universalwriteraw(filterimg,name);
+    %%saveas(gcf,name); 
+    count=count+1;
+end
+
+ 
+for i=[1,2,3,4]      % filter radius
+    for j=[0.1, 0.2 , 0.5, 1, 5, 9.9];  % filter standard deviation
+        filterimgG = filterGaussian(pic_noisy,i,j);
+        psnr=PSNRCalculate(filterimgG, pic);
+        
+        figure(count);
+        filterimgG_uint8 = uint8(filterimgG);
+        imshow(filterimgG_uint8);
+        title(['sigma: ',num2str(j),'  r: ',num2str(i),'  PSNR: ',num2str(psnr)]);
+        name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\GaussianWeight_R=' num2str(i) 'sigma=' num2str(j) '.raw'];
+        universalwriteraw(filterimgG,name);
+        %%saveas(gcf,name);
+        count=count+1;
+        
+    end
+end 
+    
+end
+
+function []=problem22()
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_gray.raw',500,400,1);
+pic_noisy = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_gray_noisy.raw',500,400,1);% To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+pic_uint8_noisy = uint8(pic_noisy);
+figure(1);
+imshow(pic_uint8);
+figure(2);
+imshow(pic_uint8_noisy);
+
+noisegraph=matrixsubtract(pic_noisy,pic);
+noise_var=noisevariance(noisegraph);
+noise_std = sqrt(noise_var); % As calculated,noise standard deviation is 9.9474.
+disp(['standard deviation of the noise  ',num2str(noise_std)]);
+count=3;
+
+for r=[1,2,3]% filter radius
+    for sigmaC=[0.5,1,2]
+        for sigmaS=[10,50,200]
+            
+            filterimg=bilateralfilter(pic_noisy,r,sigmaC,sigmaS);
+            figure(count);
+            psnr=PSNRCalculate(filterimg, pic);
+            
+            filterimg_uint8 = uint8(filterimg);
+            imshow(filterimg_uint8);
+            titlecontent=sprintf('%s %2.0f %s %2.1f %s %2.1f %s %2.3f','R: ',r,'sigmaC: ',sigmaC,'sigmaS: ',sigmaS,'PSNR: ',psnr);
+            title(titlecontent);
+            name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\Bilateral_R=' num2str(r) 'sigmaC' num2str(sigmaC) 'sigmaS' num2str(sigmaS) '.raw'];
+            universalwriteraw(filterimg,name);
+            %saveas(gcf,name);
+            count=count+1;
+        end
+    end
+     
+end
+
+
+end
+
+function []=problem23()
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_gray.raw',500,400,1);
+pic_noisy = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_gray_noisy.raw',500,400,1);% To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+pic_uint8_noisy = uint8(pic_noisy);
+figure(1);
+imshow(pic_uint8);
+figure(2);
+imshow(pic_uint8_noisy);
+
+noisegraph=matrixsubtract(pic,pic_noisy);
+noise_var=noisevariance(noisegraph);
+noise_std = sqrt(noise_var); % As calculated,noise standard deviation is 9.9474.
+disp(['standard deviation of the noise  ',num2str(noise_std)]);
+count=3;
+% other used values are in the notation
+for R_small=[1]% filter radius small window 2,3
+    for R_large=[5] % filter radius large window 3,4
+        for h=[10] % 3,50
+            
+                filterimg=NLmeansfilter(pic_noisy,R_small,R_large,h,25);
+                figure(count);
+                psnr=PSNRCalculate(filterimg, pic);
+               
+                filterimg_uint8 = uint8(filterimg);
+                imshow(filterimg_uint8);
+                titlecontent=sprintf('%s %2.0f %s %2.0f %s %2.1f %s %2.3f','Rsmall: ',R_small,'Rlarge: ',R_large,'h: ',h,'PSNR: ',psnr);
+                title(titlecontent);
+                name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\nlmeansR_small=' num2str(R_small) 'R_large' num2str(R_large) 'h=' num2str(h) '.raw'];
+                universalwriteraw(filterimg,name);
+                %%saveas(gcf,name);
+                count=count+1;
+            
+        end
+    end
+end
+
+end
+
+function []=problem24()
+pic = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits.raw',500,400,3);
+pic_noisy = ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_noisy.raw',500,400,3);% To show the picture correctly 580 here should be number of columns, 440 should be the number of rows.
+pic_uint8 = uint8(pic);
+pic_uint8_noisy = uint8(pic_noisy);
+figure(1);
+imshow(pic_uint8);
+figure(2);
+imshow(pic_uint8_noisy);
+% name1  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\hw1_result_image\problem23\untitled' num2str(count) '.jpg'];
+% saveas(gcf,name1);
+[m,n,d]=size(pic_noisy);
+R_pic_noisy=zeros(m,n);
+G_pic_noisy=zeros(m,n);
+B_pic_noisy=zeros(m,n);
+R_pic_noisy=pic_noisy(:,:,1);
+G_pic_noisy=pic_noisy(:,:,2);
+B_pic_noisy=pic_noisy(:,:,3);
+
+R_pic=zeros(m,n);
+G_pic=zeros(m,n);
+B_pic=zeros(m,n);
+R_pic=pic(:,:,1);
+G_pic=pic(:,:,2);
+B_pic=pic_noisy(:,:,3);
+
+Rnoisegraph=matrixsubtract(R_pic_noisy,R_pic);
+[Rnoisehist,Rmaxnoise,Rminnoise]=noiseHistogram(Rnoisegraph);
+figure(3);
+x_axis = Rminnoise:Rmaxnoise;
+bar(x_axis, Rnoisehist);
+title('Noise histogram of Red channel');
+
+Gnoisegraph=matrixsubtract(G_pic_noisy,G_pic);
+[Gnoisehist,Gmaxnoise,Gminnoise]=noiseHistogram(Gnoisegraph);
+figure(4);
+x_axis = Gminnoise:Gmaxnoise;
+bar(x_axis, Gnoisehist);
+title('Noise histogram of Green channel');
+
+Bnoisegraph=matrixsubtract(B_pic_noisy,B_pic);
+[Bnoisehist,Bmaxnoise,Bminnoise]=noiseHistogram(Bnoisegraph);
+figure(5);
+x_axis = Bminnoise:Bmaxnoise;
+bar(x_axis, Bnoisehist);
+title('Noise histogram of blue channel');
+
+Rnoise_var=noisevariance(Rnoisegraph);
+Gnoise_var=noisevariance(Gnoisegraph);
+%Bnoise_var=noisevariance(Bnoisegraph);
+noise_var_total=(1/3)*(Rnoise_var+Gnoise_var); % blue channel has no noise so it var is regarded as 0 here
+noise_std = sqrt(noise_var_total); % As calculated,noise standard deviation is 25.2215.
+disp(['standard deviation of the noise  ',num2str(noise_std)]);
+
+Rfilterimg=outlierRemove(R_pic_noisy,60);
+Gfilterimg=outlierRemove(G_pic_noisy,60);
+Bfilterimg=outlierRemove(B_pic_noisy,60);
+
+RfilterimgNoise=matrixsubtract(Rfilterimg,B_pic);
+GfilterimgNoise=matrixsubtract(Gfilterimg,G_pic);
+Rnoise_var=noisevariance(RfilterimgNoise);
+Gnoise_var=noisevariance(GfilterimgNoise);
+%Bnoise_var=noisevariance(Rfilterimg);
+noise_var_total=(1/3)*(Rnoise_var+Gnoise_var); % blue channel has no noise so it var is regarded as 0 here
+noise_std = sqrt(noise_var_total); % As calculated,noise standard deviation is 47.2661.
+disp(['standard deviation of the noise after outlier removal  ',num2str(noise_std)]);
+
+picOutRemov=zeros(m,n,d);
+picOutRemov(:,:,1)=Rfilterimg;
+picOutRemov(:,:,2)=Gfilterimg;
+picOutRemov(:,:,3)=Bfilterimg;
+figure(6);
+picOutRemov_uint8=uint8(picOutRemov);
+imshow(picOutRemov_uint8);
+
+titlecontent=['Outlier Removed Picture'];
+title(titlecontent);
+name  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\outlierRemovedPic.raw'];
+%saveas(gcf,name);
+universalwriteraw(picOutRemov,name);
+
+count=7;
+% other used values are in the notation
+for R_small=[1]% filter radius small window %2,3,4
+    for R_large=[5] % filter radius large window %5,6,7
+        %for h=[30,40,50]
+            
+                RfilterimgNL=NLmeansfilter(Rfilterimg,R_small,R_large,30,25);
+                GfilterimgNL=NLmeansfilter(Gfilterimg,R_small,R_large,30,25);
+                BfilterimgNL=NLmeansfilter(Bfilterimg,R_small,R_large,30,25);
+                
+                picOutRemovNL=zeros(m,n,d);
+                picOutRemovNL(:,:,1)=RfilterimgNL;
+                picOutRemovNL(:,:,2)=GfilterimgNL;
+                picOutRemovNL(:,:,3)=BfilterimgNL;
+                figure(count);
+                picOutRemovNL_uint8=uint8(picOutRemovNL);
+                
+                psnrR=PSNRCalculate(RfilterimgNL, R_pic);
+                psnrG=PSNRCalculate(GfilterimgNL, G_pic);
+                psnrB=PSNRCalculate(BfilterimgNL, B_pic);
+                psnr=(1/3)*(psnrR+psnrG+psnrB);
+                
+                imshow(picOutRemovNL_uint8);
+                titlecontent=sprintf('%s %2.0f %s %2.0f %s %2.3f','Rsmall: ',R_small,'Rlarge: ',R_large,'PSNR: ',psnr);
+                title(titlecontent);
+                name1  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\outlierNLmeans' num2str(count) '.raw']; %%% OutlierNL\
+                universalwriteraw(picOutRemovNL,name1);
+                %saveas(gcf,name1);
+                count=count+1;
+        %end
+    end
+end
+%%%%%Bilateral filter
+for r=[1,2,3]% filter radius
+    for sigmaC=[0.5,1,2]
+        for sigmaS=[10,50,200]
+            
+            RfilterimgBI=bilateralfilter(Rfilterimg,r,sigmaC,sigmaS);
+            GfilterimgBI=bilateralfilter(Gfilterimg,r,sigmaC,sigmaS);
+            BfilterimgBI=bilateralfilter(Bfilterimg,r,sigmaC,sigmaS);
+            
+            picOutRemovBI=zeros(m,n,d);
+            picOutRemovBI(:,:,1)=RfilterimgBI;
+            picOutRemovBI(:,:,2)=GfilterimgBI;
+            picOutRemovBI(:,:,3)=BfilterimgBI;
+            
+            picOutRemovBI_uint8=uint8(picOutRemovBI);
+            
+            psnrR=PSNRCalculate(RfilterimgBI, R_pic);
+            psnrG=PSNRCalculate(GfilterimgBI, G_pic);
+            psnrB=PSNRCalculate(BfilterimgBI, B_pic);
+            psnr=(1/3)*(psnrR+psnrG+psnrB);
+            figure(count);
+            imshow(picOutRemovBI_uint8);
+            titlecontent=sprintf('%s %2.0f %s %2.0f %s %2.1f %s %2.3f','r: ',r,' sigmaC: ',sigmaC,' sigmaS: ',sigmaS,' Filtered Image PSNR: ',psnr);
+            %titlecontent=sprintf('%s %2.3f','Filtered Image PSNR: ',psnr);
+            title(titlecontent);
+            name2  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\outlierBilateral' num2str(count) '.raw'];
+            universalwriteraw(picOutRemovBI,name2);
+            %saveas(gcf,name2);
+            count=count+1;
+        end
+    end
+     
+end
+
+
+end
+
+function []=problem31()
+pic=ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits.raw',500,400,3);
+pic_uint8=uint8(pic);
+imshow(pic_uint8);
+[m,n,d]=size(pic);
+R_pic=pic(:,:,1);
+G_pic=pic(:,:,2);
+B_pic=pic(:,:,3);
+R_pic_reduct=universalColorsetReduction(R_pic,4);
+G_pic_reduct=universalColorsetReduction(G_pic,4);
+B_pic_reduct=universalColorsetReduction(B_pic,4);
+pic_reduced=zeros(m,n,d);
+pic_reduced(:,:,1)=R_pic_reduct;
+pic_reduced(:,:,2)=G_pic_reduct;
+pic_reduced(:,:,3)=B_pic_reduct;
+pic_reduced_uint8=uint8(pic_reduced);
+figure(1);
+imshow(pic_reduced_uint8);
+titlecontent=sprintf('%s','Original Picture Color Reduced Picture Color=64 ');
+title(titlecontent);
+name = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\pic_reduced_color=64.raw'];
+universalwriteraw(pic_reduced,name);
+%saveas(gcf,name);
+
+count=2;
+pic_reduced_oil=zeros(m,n,d);
+counts=3;
+for N=3:11
+R_pic_reduct_oil=oliPaintingFilter(R_pic_reduct,N);
+G_pic_reduct_oil=oliPaintingFilter(G_pic_reduct,N);
+B_pic_reduct_oil=oliPaintingFilter(B_pic_reduct,N);
+pic_reduced_oil(:,:,1)=R_pic_reduct_oil;
+pic_reduced_oil(:,:,2)=G_pic_reduct_oil;
+pic_reduced_oil(:,:,3)=B_pic_reduct_oil;
+pic_reduced_oil_uint8=uint8(pic_reduced_oil);
+figure(count);
+imshow(pic_reduced_oil_uint8);
+titlecontent=sprintf('%s %s %2.0f','Original Picture Color=64 ','N=',N);
+title(titlecontent);
+name1  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\pic_reduced_oil_N=' num2str(counts) '.raw'];
+universalwriteraw(pic_reduced_oil,name1);
+%saveas(gcf,name1);
+count=count+1;
+counts=counts+1;
+end
+
+
+end
+
+function []=problem32()
+pic=ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits.raw',500,400,3);
+pic_uint8=uint8(pic);
+imshow(pic_uint8);
+[m,n,d]=size(pic);
+R_pic=pic(:,:,1);
+G_pic=pic(:,:,2);
+B_pic=pic(:,:,3);
+R_pic_reduct=universalColorsetReduction(R_pic,8);
+G_pic_reduct=universalColorsetReduction(G_pic,8);
+B_pic_reduct=universalColorsetReduction(B_pic,8);
+pic_reduced=zeros(m,n,d);
+pic_reduced(:,:,1)=R_pic_reduct;
+pic_reduced(:,:,2)=G_pic_reduct;
+pic_reduced(:,:,3)=B_pic_reduct;
+pic_reduced_uint8=uint8(pic_reduced);
+figure(1);
+imshow(pic_reduced_uint8);
+titlecontent=sprintf('%s','Original Image Color Reduced Picture Color=512 ');
+title(titlecontent);
+name = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\pic_reduced_color=512.raw'];
+universalwriteraw(pic_reduced,name);
+%saveas(gcf,name);
+
+count=2;
+pic_reduced_oil=zeros(m,n,d);
+counts=3;
+for N=3:11
+R_pic_reduct_oil=oliPaintingFilter(R_pic_reduct,N);
+G_pic_reduct_oil=oliPaintingFilter(G_pic_reduct,N);
+B_pic_reduct_oil=oliPaintingFilter(B_pic_reduct,N);
+pic_reduced_oil(:,:,1)=R_pic_reduct_oil;
+pic_reduced_oil(:,:,2)=G_pic_reduct_oil;
+pic_reduced_oil(:,:,3)=B_pic_reduct_oil;
+pic_reduced_oil_uint8=uint8(pic_reduced_oil);
+figure(count);
+imshow(pic_reduced_oil_uint8);
+titlecontent=sprintf('%s %s %2.0f','Original Picture Color=512 ','N=',N);
+title(titlecontent);
+name1  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\pic_reduced_oil_N=' num2str(counts) '.raw'];
+universalwriteraw(pic_reduced_oil,name1);
+%saveas(gcf,name1);
+count=count+1;
+counts=counts+1;
+end
+
+
+end
+
+function []=problem33()
+pic_noisy=ModifiedReadraw('C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\HW1_images\Fruits_noisy.raw',500,400,3);
+pic_noisy_uint8=uint8(pic_noisy);
+count=1;
+figure(count);
+imshow(pic_noisy_uint8);
+[m,n,d]=size(pic_noisy);
+R_pic=pic_noisy(:,:,1);
+G_pic=pic_noisy(:,:,2);
+B_pic=pic_noisy(:,:,3);
+count=2;
+for r=[4,8]
+    R_pic_reduct=universalColorsetReduction(R_pic,r);
+    G_pic_reduct=universalColorsetReduction(G_pic,r);
+    B_pic_reduct=universalColorsetReduction(B_pic,r);
+    pic_reduced=zeros(m,n,d);
+    pic_reduced(:,:,1)=R_pic_reduct;
+    pic_reduced(:,:,2)=G_pic_reduct;
+    pic_reduced(:,:,3)=B_pic_reduct;
+    pic_reduced_uint8=uint8(pic_reduced);
+    figure(count);
+    imshow(pic_reduced_uint8);
+    color=r*r*r;
+    titlecontent=sprintf('%s %s %2.0f','Noisy Picture ','Color Reduced Picture Color=',color);
+    title(titlecontent);
+    
+    
+    name = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\pic_reduced_color=' num2str(color) '.raw'];
+    universalwriteraw(pic_reduced,name);
+    %saveas(gcf,name);
+    count=count+1;
+    pic_reduced_oil=zeros(m,n,d);
+    
+    for N=3:11
+        R_pic_reduct_oil=oliPaintingFilter(R_pic_reduct,N);
+        G_pic_reduct_oil=oliPaintingFilter(G_pic_reduct,N);
+        B_pic_reduct_oil=oliPaintingFilter(B_pic_reduct,N);
+        pic_reduced_oil(:,:,1)=R_pic_reduct_oil;
+        pic_reduced_oil(:,:,2)=G_pic_reduct_oil;
+        pic_reduced_oil(:,:,3)=B_pic_reduct_oil;
+        pic_reduced_oil_uint8=uint8(pic_reduced_oil);
+        figure(count);
+        imshow(pic_reduced_oil_uint8);
+        titlecontent=sprintf('%s %s %2.0f %s %2.0f','Noisy Picture ','Color=',color,'N=',N);
+        title(titlecontent);
+        counts=mod(count,10);
+        name1  = ['C:\Users\Appli\Desktop\EE569\HOMEWORK_ASSIGNMENT\hw1\submissiontest\pic_reduced_oil_color=' num2str(color) '_N=' num2str(counts) '.raw'];
+        universalwriteraw(pic_reduced_oil,name1);
+        %saveas(gcf,name1);
+        count=count+1;
+        
+    end
+    
+end
+
+end
+
+function raw = universalwriteraw(img, filename)
+
+	disp([' Write raw image to'  filename ' ...']);
+    
+	% Get file ID
+	fid = fopen(filename,'wb');
+    [m,n,dimen]=size(img);
+
+    imgsize = m*n;
+	% To check if the file exists
+	if (fid == -1)
+		error('can not open output image filem press CTRL-C to exit \n');
+		pause
+    end
+    
+  pixels = zeros(1,imgsize*dimen);
+  imgt=zeros(n,m,dimen);
+  % Transpose matrix to write file properly
+  for layer=1:dimen
+      imgt(:,:,layer)=MatrixTranspose(img(:,:,layer)); %imgt 500*400*3
+  end
+  
+  for layer=1:dimen
+     temp=layer;
+      for i=1:n % n=500
+          for j=1:m %m=400
+              
+              pixels(temp)=imgt(i,j,layer); % 500*400*3 to 
+              temp=temp+dimen;
+          end
+      end
+  end
+
+
+	% Write and close file
+	raw = fwrite(fid,pixels, 'uchar');
+	fclose(fid);
+
+end %function
+
+function imgPadded=universalPadding(img,n)  %n is what you want to padd
+
+[row,col]=size(img); 
+imgPadded=zeros(row+2*n,col+2*n);
+imgPadded(n+1:row+n,n+1:col+n)=img;
+
+for i=1:n
+imgPadded(n+1-i,n+1:col+n)=imgPadded(n+1+i,n+1:col+n);        % pad above
+imgPadded(row+n+i,n+1:col+n)=imgPadded(row+n-i,n+1:col+n);    % pad below
+end
+
+for i=1:n
+imgPadded(1:row+2*n,n+1-i)=imgPadded(1:row+2*n,n+1+i);        % pad left
+imgPadded(1:row+2*n,col+n+i)=imgPadded(1:row+2*n,col+n-i);    % pad right bug here!!!!!
+end
+
+end
+
+function reducedimg=universalColorsetReduction(img,r)      % 64 color r=4, 512 color r=8.can deal with r whethe it can divide 256 with residual or not
+[m,n]=size(img);
+reducedimg=zeros(m,n);
+for i=1:m
+    for j=1:n
+        img(i,j)=img(i,j)+1;
+    end
+end
+interval=floor(256/r);
+residual=mod(256,r);
+reflection=zeros(1,256);
+
+for i=1:r
+    if i==r
+        minj=(i-1)*interval+1;
+        maxj=i*interval+residual;
+    else
+        minj=(i-1)*interval+1;
+        maxj=i*interval;
+    end
+    for j=minj:maxj        % build a dictionary for look up
+        reflection(1,j)=round(0.5*(minj+maxj));
+    end
+end
+
+for i=1:m
+    for j=1:n
+        reducedimg(i,j)=reflection(1,img(i,j));
+    end
+end
+
+end
+
+function imgt=rearrange(img)
+[m,n]=size(img);
+for i=1:m
+    for j=1:n
+        img(i,j)=img(i,j)+1;
+    end
+end
+pixelindex=zeros(1,m*n);
+
+time=1;
+for pixel=1:256
+    index=1;
+   
+    for i=1:m
+        for j=1:n
+            if img(i,j)==pixel
+                pixelindex(1,time)=index;   % collect label by number
+                time=time+1;
+            end
+            index=index+1;
+        end
+    end
+    
+end
+pmf=CalHist(img);
+
+temp=1;
+interval=zeros(1,m*n);
+for i=1:256
+    interval(1,temp:(temp+pmf(1,i)-1))=pixelindex(1,temp:(temp+pmf(1,i)-1));
+    
+    tpp=interval(1,temp:(temp+pmf(1,i)-1));
+    interval(1,temp:(temp+pmf(1,i)-1))=tpp(randperm(length(tpp))); %finish randomize
+    temp=temp+pmf(1,i);                                            % interval restores m*n=224000 position, we use one number rather than i,j to memorize 
+                                                                   %the position of image element, we can transform it into i,j by calculate with num of row m and col n
+end
+imgt=zeros(m,n);
+for i=1:256
+    next(:,i)=interval(1,((i-1)*m*n/256+1):(i*m*n/256));              % redistribute intensity
+    for j=1:875
+        rol=floor(next(j,i)/n)+1;
+        if mod(next(j,i),n)==0
+            col=n;
+        else
+            col=mod(next(j,i),n);
+        end
+            
+        imgt(rol,col)=i;
+    end
+end
+end
+
+function PSNR = PSNRCalculate(img1, img2)
+[m,n]=size(img1);
+% convert to doubles
+img1=double(img1);
+img2=double(img2);
+imgdifference=zeros(m,n);
+imgdiffsqrt=zeros(m,n);
+imgdifference=matrixsubtract(img1,img2);
+countzero=0;
+%%%Avoid divided by zero
+for i=1:m
+    for j=1:n
+        if imgdifference(i,j)==0
+            countzero=countzero+1;
+        end
+    end
+end
+if countzero==m*n
+    MeanSquareError=0.01;
+else
+    MeanSquareError=0;
+end
+for i=1:m
+    for j=1:n
+        imgdiffsqrt(i,j)=imgdifference(i,j)^2;
+    end
+end
+for i=1:m
+    for j=1:n
+        MeanSquareError=MeanSquareError+(1/(m*n))*imgdiffsqrt(i,j);
+    end
+end
+PSNR=10*log10(255*255/MeanSquareError);
+
+end
+
+function filterimg=outlierRemove(img,threshold)
+[m,n] = size(img);
+imgPadded=universalPadding(img,1);
+filterimg=zeros(m,n);
+
+for i =1:m
+    for j=1:n
+        average = 0.125*(imgPadded(i,j)+imgPadded(i,j+1)+imgPadded(i,j+2)+imgPadded(i+1,j)+ ...
+            imgPadded(i+1,j+2)+imgPadded(i+2,j)+imgPadded(i+2,j+1)+imgPadded(i+2,j+2));
+        if abs(img(i,j) - average) > threshold
+            filterimg(i,j) = average;
+        else
+            filterimg(i,j)=img(i,j);
+        end
+    end
+end
+
+end
+
+function filterimg=oliPaintingFilter(img,r)
+[m,n]=size(img);
+imgpadded=universalPadding(img,r);
+filterimg=zeros(m,n);
+convcore=zeros(2*r+1,2*r+1);
+
+for i=1:m
+    for j=1:n
+        for p=1:2*r+1
+            for q=1:2*r+1
+                convcore(p,q)=imgpadded(i+p-1,j+q-1);
+            end
+        end
+        filterimg(i,j)=findCoreMode(convcore);
+    end
+end
+
+end
+
+function noisevar=noisevariance(noiseimg)
+[m,n]=size(noiseimg);
+noise_avg=noiseaverage(noiseimg);
+noisevar=0;
+
+for i=1:m
+    for j=1:n
+        noisevar=noisevar+(noiseimg(i,j)-noise_avg)^2;
+    end
+end
+
+denomin=m*n;
+noisevar=noisevar/denomin;
+
+end
+
+function [noisehist,maxnoise,minnoise]=noiseHistogram(noise)
+[m,n]=size(noise);
+noiseabs=absolutevalue(noise);
+maxnoise=max(max(noiseabs));
+minnoise=min(min(noise));
+
+noisehist=zeros(1,maxnoise-minnoise+1);
+
+  for i=1:m
+      for j=1:n
+          noisehist(1,noise(i,j)-minnoise+1)=noisehist(1,noiseabs(i,j)-minnoise+1)+1;
+      end
+  end
+  
+end
+
+function noiseavg=noiseaverage(noiseimg)
+[m,n]=size(noiseimg);
+sum=0;
+
+for i=1:m
+    for j=1:n
+        sum=sum+noiseimg(i,j);
+    end
+end
+
+denomin=m*n;
+noiseavg=sum/denomin;
+end
+
+function filterimg=NLmeansfilter(img,rsmall,rlarge,h,sigma)
+[m,n]=size(img);
+filterimg=zeros(m,n);
+imgpadded=universalPadding(img,rsmall);
+convcore=zeros(2*rsmall+1,2*rsmall+1); % core center: rsmall+1
+for i=1:2*rsmall+1
+    for j=1:2*rsmall+1
+        convcore(i,j)=(1/sqrt(2*pi*sigma^2))*exp(-((i-rsmall-1)^2+(j-rsmall-1)^2)/(2*sigma^2));
+    end
+end         % two times of normalization, one is small window comparison, another is to sum up all small window comparison value to calculate the pixel in filtered image
+normconvcore=coreNormalization(convcore);
+for i=1:m
+    for j=1:n
+        centerwindow=imgpadded(i:i+2*rsmall,j:j+2*rsmall); % for neighborhood pixel window, it varies with k,l, we will define it later
+        rowmin_neiPixelWindow=max(1+rsmall,i+rsmall-rlarge);
+        rowmax_neiPixelWindow=min(i+rsmall+rlarge,m+rsmall);
+        colmin_neiPixelWindow=max(1+rsmall,j+rsmall-rlarge);
+        colmax_neiPixelWindow=min(n+rsmall,j+rsmall+rlarge);
+        filteredvalue=0;
+        sum=0;
+        weight=zeros(1+2*rsmall,1+2*rsmall);
+        for k=rowmin_neiPixelWindow:rowmax_neiPixelWindow
+            for l=colmin_neiPixelWindow:colmax_neiPixelWindow
+                neiPixelWindow=imgpadded(k-rsmall:k+rsmall,l-rsmall:l+rsmall);
+                summation=0;
+                for p=1:1+2*rsmall
+                    for q=1:1+2*rsmall
+                        summation=summation+normconvcore(p,q)*(centerwindow(p,q)-neiPixelWindow(p,q))^2;
+                    end
+                end
+                weight(k,l)=exp(-summation/(h^2));
+            end
+        end
+                normweight=coreNormalization(weight);
+                for k=rowmin_neiPixelWindow:rowmax_neiPixelWindow
+                    for l=colmin_neiPixelWindow:colmax_neiPixelWindow
+                        filteredvalue=filteredvalue+normweight(k,l)*imgpadded(k,l);
+                    end
+                end
+                filterimg(i,j)=filteredvalue;
+    end
+end
+
+end
+
+function imgt=ModifiedReadraw(filename,row,col,dimension)
+  
+  disp(['Retrieving Image' filename '...']);
+  
+  fid=fopen(filename,'rb');
+  
+  if (fid==-1)
+      error('can not open input image file press CTRL-C to exit \n');
+   pause
+  end
+  % Get all the pixels from the image
+	pixel = fread(fid, inf, 'uchar');
+
+	% Close file
+	fclose(fid);
+
+  img=zeros(row,col,dimension);
+  
+  for layer=1:dimension
+     temp=layer;
+      for j=1:col
+          for i=1:row
+              
+              img(i,j,layer)=pixel(temp);
+              temp=temp+dimension;
+          end
+      end
+  end
+  
+  imgt=zeros(col,row,dimension);
+  
+  for layer=1:dimension
+      imgt(:,:,layer)=MatrixTranspose(img(:,:,layer)); 
+  end
+  
+end
+
+function  demosaicedLayer=MHCDemo(img,color)
+% color notation Red 1,Green 2,Blue 3
+ [col,row]=size(img); %col:440  row:580
+ demosaicedLayer=zeros(col,row);
+ 
+ imgPadded=universalPadding(img,2);
+ switch color
+     case 1  %for red
+       for i = 1:col
+         for j = 1:row
+             if mod(i,2) == 1 && mod(j,2) == 0      % Red itself, just transfer the value
+                demosaicedLayer(i,j) = imgPadded(i+2,j+2);
+            elseif mod(i,2) == 1 && mod(j,2) == 1  % Green on the blue column, need to calculate red here
+                demosaicedLayer(i,j) = round(0.125*(0.5*imgPadded(i,j+2)-imgPadded(i+1,j+1)-imgPadded(i+1,j+3)-imgPadded(i+2,j) ...
+                    +4*imgPadded(i+2,j+1)+5*imgPadded(i+2,j+2)+4*imgPadded(i+2,j+3)-imgPadded(i+2,j+4)-imgPadded(i+3,j+1)-imgPadded(i+3,j+3)+0.5*imgPadded(i+4,j+2)));
+            elseif mod(i,2) == 0 && mod(j,2) == 0  % green on the red column, need to calculate red value here
+                demosaicedLayer(i,j) = round(0.125*(0.5*imgPadded(i,j+2)-imgPadded(i+1,j+1)-imgPadded(i+1,j+3)-imgPadded(i+2,j) ...
+                    +4*imgPadded(i+1,j+2)+5*imgPadded(i+2,j+2)+4*imgPadded(i+3,j+2)-imgPadded(i+2,j+4)-imgPadded(i+3,j+1)-imgPadded(i+3,j+3)+0.5*imgPadded(i+4,j+2)));
+            else                                   % blue value, need to cal red value here
+                demosaicedLayer(i,j) = round(0.125*(-1.5*imgPadded(i,j+2)+2*imgPadded(i+1,j+1)+2*imgPadded(i+1,j+3)-1.5*imgPadded(i+2,j) ...
+                    +6*imgPadded(i+2,j+2)-1.5*imgPadded(i+2,j+4)+2*imgPadded(i+3,j+1)+2*imgPadded(i+3,j+3)-1.5*imgPadded(i+4,j+2)));
+             
+            end
+        end
+    end
+
+
+        
+     case 2  %for green
+         for i =1:col
+            for j =1:row
+               if mod(i,2) == 1 && mod(j,2) == 1      % green itself, just transfer the value
+                demosaicedLayer(i,j) = imgPadded(i+2,j+2);
+               elseif mod(i,2) == 0 && mod(j,2) == 0  % also green itself
+                demosaicedLayer(i,j) = imgPadded(i+2,j+2);
+               elseif mod(i,2)==1 && mod(i,2)==0      % we need to cal green value in this red position                                    %
+                demosaicedLayer(i,j) = round(0.125*(-imgPadded(i,j+2)+2*imgPadded(i+1,j+2)-imgPadded(i+2,j)+2*imgPadded(i+2,j+1) ...
+                    +4*imgPadded(i+2,j+2)+2*imgPadded(i+2,j+3)-imgPadded(i+2,j+4)+2*imgPadded(i+3,j+2)-imgPadded(i+4,j+2)));
+               else                                    % we need to cal green value in this blue position
+                demosaicedLayer(i,j) = round(0.125*(-imgPadded(i,j+2)+2*imgPadded(i+1,j+2)-imgPadded(i+2,j)+2*imgPadded(i+2,j+1) ...
+                    +4*imgPadded(i+2,j+2)+2*imgPadded(i+2,j+3)-imgPadded(i+2,j+4)+2*imgPadded(i+3,j+2)-imgPadded(i+4,j+2)));
+            end
+        end
+    end
+
+      
+     otherwise          %for blue
+         for i =1:col
+            for j = 1:row
+                if mod(i,2) == 0 && mod(j,2) == 1      % Blue here, just transfer the function
+                demosaicedLayer(i,j) = imgPadded(i+2,j+2);
+            elseif mod(i,2) == 1 && mod(j,2) == 1  % Green value on blue column, need to calculate blue value here
+                demosaicedLayer(i,j) = round(0.125*(0.5*imgPadded(i,j+2)-imgPadded(i+1,j+1)-imgPadded(i+1,j+3)-imgPadded(i+2,j) ...
+                    +4*imgPadded(i+1,j+2)+5*imgPadded(i+2,j+2)+4*imgPadded(i+3,j+2)-imgPadded(i+2,j+4)-imgPadded(i+3,j+1)-imgPadded(i+3,j+3)+0.5*imgPadded(i+4,j+2)));
+            elseif mod(i,2) == 0 && mod(j,2) == 0  % Green value on red column, need to cal blue value here
+                demosaicedLayer(i,j) = round(0.125*(0.5*imgPadded(i,j+2)-imgPadded(i+1,j+1)-imgPadded(i+1,j+3)-imgPadded(i+2,j) ...
+                    +4*imgPadded(i+2,j+1)+5*imgPadded(i+2,j+2)+4*imgPadded(i+2,j+3)-imgPadded(i+2,j+4)-imgPadded(i+3,j+1)-imgPadded(i+3,j+3)+0.5*imgPadded(i+4,j+2)));
+            else                                   % Red here, need to cal blue here
+                demosaicedLayer(i,j) = round(0.125*(-1.5*imgPadded(i,j+2)+2*imgPadded(i+1,j+1)+2*imgPadded(i+1,j+3)-1.5*imgPadded(i+2,j) ...
+                    +6*imgPadded(i+2,j+2)-1.5*imgPadded(i+2,j+4)+2*imgPadded(i+3,j+1)+2*imgPadded(i+3,j+3)-1.5*imgPadded(i+4,j+2)));
+                end
+            end
+         end
+ end
+
+
+end
+
+function transposed = MatrixTranspose(matrix)
+
+[m,n] = size(matrix);
+transposed = zeros(n,m);
+  for i=1:m
+      for j=1:n
+        transposed(j,i) = matrix(i,j);
+      end
+  end
+
+end
+
+function sub=matrixsubtract(ori1,ori2)
+[m,n]=size(ori1);
+[p,q]=size(ori2);
+if m~=p || n~=q
+    disp('only matrices have the same size can do subtraction operation');
+end
+sub=zeros(m,n);
+for i=1:m
+    for j=1:n
+        sub(i,j)=ori1(i,j)-ori2(i,j);
+    end
+end
+
+end
+
+function transferedimg=intensityTransfer(img,transferfuc)
+[m,n]=size(img);
+newtranferfuc=zeros(1,257);
+newtranferfuc(1,2:257)=transferfuc(1,1:256);     % avoid indexed by zero and meanwhile do not accidently change final image pixel values
+transferedimg=zeros(m,n);
+for i=1:m
+    for j=1:n
+        transferedimg(i,j)=newtranferfuc(1,img(i,j)+1); % transferedimg(i,j)=transferfuc(1,img(i,j)+1); The method +1 here is to avoid indexed by zero, but it will make every pixel +1 in the final picture, so we won't use this.
+    end
+end
+end
+
+function modeconvcore=findCoreMode(convcore)
+[m,n]=size(convcore);
+
+restoration=zeros(1,256);
+for i=1:m
+    for j=1:n
+        restoration(1,convcore(i,j))=restoration(1,convcore(i,j))+1;
+    end
+end
+maxres=max(restoration);
+count=0;
+modeconvcore=0;
+for k=1:256                        % the case that one faces multiple may ocurr
+    if restoration(1,k)==maxres
+        modeconvcore=modeconvcore+k;
+        count=count+1;
+    end
+end
+modeconvcore=modeconvcore/count;
+
+end
+
+function  filterimg=filterUnifWeight(img,r)
+[m,n]=size(img);
+new_img=universalPadding(img,r);
+filterimg=zeros(m,n);%convcorecenter=r+1;
+convcore=zeros(2*r+1,2*r+1);
+
+for i=1:2*r+1
+    for j=1:2*r+1
+        convcore(i,j)=1/((2*r+1)*(2*r+1));
+    end
+end
+
+for i=1:m
+    for j=1:n
+        sum=0;
+        for p=1:2*r+1
+            for q=1:2*r+1
+               sum=sum+convcore(p,q)*new_img(i+p-1,j+q-1);
+            end
+        end
+        filterimg(i,j)=sum;
+    end
+end
+
+end
+
+function filterimg=filterGaussian(img,r,sigma)
+[m,n]=size(img);
+new_img=universalPadding(img,r);
+filterimg=zeros(m,n);%convcorecenter=r+1;
+convcore=zeros(2*r+1,2*r+1);
+
+for i=1:2*r+1
+    for j=1:2*r+1
+        convcore(i,j)=(1/sqrt(2*pi*sigma^2))*exp(-((i-(r+1))^2+(j-(r+1))^2)/(2*sigma^2));
+    end
+end
+
+normconvcore=coreNormalization(convcore);
+
+for i=1:m
+    for j=1:n
+        sum=0;
+        for p=1:2*r+1
+            for q=1:2*r+1
+                sum=sum+normconvcore(p,q)*new_img(i+p-1,j+q-1);
+            end
+        end
+        filterimg(i,j)=sum;
+    end
+end
+
+end
+
+function imgcdf=cumulativeHistogram(hist) % hist length 256 only
+imgcdf=zeros(1,256);       % most of image have the gray level of 256 so we neither need to enter the array length nor to measure it
+temp=0;
+for i=1:256
+    temp=temp+hist(1,i);
+    imgcdf(1,i)=temp;
+end
+
+end
+
+function normconvcore=coreNormalization(convcore)
+[m,n]=size(convcore);
+sum=0;
+for i=1:m
+    for j=1:n
+        sum=sum+convcore(i,j);
+    end
+end
+
+normconvcore=zeros(m,n);
+
+for i=1:m
+    for j=1:n
+        normconvcore(i,j)=convcore(i,j)/sum;
+    end
+end
+
+end
+
+function pmf=CalHist(img)          % Calculate histodiagram, pmf here means probability mass function
+pmf=zeros(1,256);
+[m,n]=size(img);
+
+for k=1:256
+    for i=1:m
+        for j=1:n
+            if img(i,j)==k
+                pmf(1,k)=pmf(1,k)+1;
+            end
+        end
+    end
+end
+
+end
+
+function  demosaicedLayer=bilinearDemo(img,color)
+% color notation Red 1,Green 2,Blue 3
+ [col,row]=size(img); %col:440  row:580
+ demosaicedLayer=zeros(col,row);
+ 
+ imgPadded=universalPadding(img,1);
+ switch color
+     case 1  %for red
+       for i = 1:col
+         for j = 1:row
+             if  mod(i,2) == 0 && mod(j,2) == 0
+              demosaicedLayer(i,j) = 0.5*(imgPadded(i+1,j)+imgPadded(i+1,j+2));   %blue column green
+             
+             elseif mod(i,2)==1 && mod(j,2)==0
+              demosaicedLayer(i,j) = imgPadded(i+1,j+1);                           %red
+             
+             elseif mod(i,2) == 1 && mod(j,2) == 1
+             demosaicedLayer(i,j) = 0.5*(imgPadded(i,j+1)+imgPadded(i+2,j+1)); %red column green
+             
+             else 
+             demosaicedLayer(i,j) = 0.25*(imgPadded(i,j)+imgPadded(i,j+2)+imgPadded(i+2,j+2)+imgPadded(i+2,j));% blue
+             end
+          end
+       end
+        
+     case 2  %for green
+         for i =1:col
+             for j =1:row
+                 if mod(i,2) == 1 && mod(j,2) == 1
+                     demosaicedLayer(i,j) = imgPadded(i+1,j+1); %green
+                 elseif mod(i,2) == 0 && mod(j,2) == 0
+                     demosaicedLayer(i,j) = imgPadded(i+1,j+1); %green
+                 elseif mod(i,2)==0 && mod(j,2)==1
+                     demosaicedLayer(i,j) = 0.25*(imgPadded(i+2,j+1)+imgPadded(i+1,j)+imgPadded(i+1,j+2)+imgPadded(i,j));%red
+                 else
+                     demosaicedLayer(i,j) = 0.25*(imgPadded(i+1,j+2)+imgPadded(i,j+1)+imgPadded(i+2,j+1)+imgPadded(i+1,j));
+                 end
+             end
+         end
+      
+     otherwise          %for blue
+         for i =1:col
+            for j = 1:row
+                if mod(i,2)==1 && mod(j,2)==1
+                 demosaicedLayer(i,j) = 0.5*(imgPadded(i,j+1)+imgPadded(i+2,j+1)); %green 1,1
+                elseif mod(i,2)==0 && mod(j,2)==1
+                 demosaicedLayer(i,j) = imgPadded(i+1,j+1);  %blue 2,1
+                elseif mod(i,2)==1 && mod(j,2)==0
+               demosaicedLayer(i,j) = 0.25*(imgPadded(i,j)+imgPadded(i+2,j)+imgPadded(i,j+2)+imgPadded(i+2,j+2));%red 1,2
+                else
+               demosaicedLayer(i,j) = 0.5*(imgPadded(i+1,j)+imgPadded(i+1,j+2));%green 2,2
+                end
+            end
+         end
+ end
+
+
+end
+
+function filterimg=bilateralfilter(img,r,sigmac,sigmas)
+[m,n]=size(img);
+new_img=universalPadding(img,r);
+filterimg=zeros(m,n);
+convcore=zeros(2*r+1,2*r+1); 
+% here you cannot preset the core because the intensity term changes with
+% i,j change
+       
+for i=1:m
+    for j=1:n
+        sum=0;
+        for p=1:2*r+1
+            for q=1:2*r+1
+                convcore(p,q)=exp(-((1+r-p)^2+(1+r-q)^2)/(2*sigmac^2)-(new_img(i+r,j+r)-new_img(i-1+p,j-1+q))^2/(2*sigmas^2));
+            end
+        end
+        normconvcore=coreNormalization(convcore);
+        for p=1:2*r+1
+            for q=1:2*r+1
+                sum=sum+normconvcore(p,q)*new_img(i-1+p,j-1+q);
+            end
+        end
+        filterimg(i,j)=sum;
+    end
+end
+
+end
+
+function absvalue=absolutevalue(img)
+[m,n]=size(img);
+absvalue=zeros(m,n);
+for i=1:m
+    for j=1:n
+        absvalue(i,j)=abs(img(i,j));
+    end
+end
+
+end

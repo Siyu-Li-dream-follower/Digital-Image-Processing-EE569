@@ -1,0 +1,5 @@
+The two readraw codes are just reference code of how to read raw images and the possible data structure.
+You should implement your own "readraw" and "writeraw" functions which could cope with more general cases.
+For example, your functions should work for both gray images and color images, and arbitrary image sizes.
+
+This is also a good chance to see whether this course is suitable for you. If this basic task is very difficult for you, then the assignment might be too much... Then we recommend that you take some time to sharpen your programming skills first and choose this course next time.
